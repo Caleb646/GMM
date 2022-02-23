@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import MyUserCreateForm, MyUserChangeForm
-from .models import MyUser
+from .models import MyUser, Job, MessageThread, Message, Attachment
 
 
 class MyUserAdmin(UserAdmin):
@@ -28,3 +28,7 @@ class MyUserAdmin(UserAdmin):
 
 
 admin.site.register(MyUser, MyUserAdmin)
+admin.site.register(Job)
+admin.site.register(MessageThread)
+admin.site.register(Message)
+admin.site.register(Attachment)

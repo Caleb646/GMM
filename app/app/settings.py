@@ -21,7 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = bool(int(os.getenv("DEBUG", default="0")))
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+DOMAIN_URL = os.getenv("DOMAIN_URL")
+GMAIL_SECRETS = os.path.join(BASE_DIR, os.getenv("GMAIL_SECRETS_FILENAME"))
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+DEFAULT_JOB_NAME = "Unknown"
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -48,7 +51,7 @@ ROOT_URLCONF = 'app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR)],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

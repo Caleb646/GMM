@@ -1,3 +1,6 @@
+gmail_creds.json
+token.json
+**env**
 .env*
 **__pycache__**
 **migrations**
