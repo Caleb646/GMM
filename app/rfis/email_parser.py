@@ -1,9 +1,14 @@
 import re
 from thefuzz import process, fuzz
+from datetime import datetime
+from email import parser, message as py_email_message, policy
+from base64 import urlsafe_b64decode
 
 from .models import MessageThread, Job
 
+######################################################################################
 # Code was taken from here: https://github.com/zapier/email-reply-parser and modified
+######################################################################################
 class EmailReplyParser(object):
     """ Represents a email message that is parsed.
     """
@@ -168,28 +173,36 @@ class Fragment(object):
     def content(self):
         return self._content.strip()
 
+################################################################ 
+#                       END of zapier code
+################################################################
+
 #TODO move all parsing into here
 class SubjectLineParser:
     RE_FW_PATTERN = r'(RE|Re|FW|Fw|:)'
     THREAD_TYPE_CHOICES = MessageThread.ThreadTypes.choices
     JOB_NAMES = [j.name for j in Job.objects.all()]
     
-    def __init__(self, subject_line) -> None:
-        self.subject_line = subject_line
-        self.chosen = {}
-        self.best_subject_line_match = {}
-        self.min_score_allowed = 50
-        self.is_parsed = False
-        self.parse()
+    def __init__(self) -> None:
+        self._chosen = {}
+        self._best_subject_line_match = {}
+        self._min_score_allowed = 50
+        self._is_parsed = False
 
-    def parse(self):
-        self.subject_line = re.sub(self.RE_FW_PATTERN, "", self.subject_line).strip()
-        self.choose_thread_type()
-        self.choose_job_name()
-        self.is_parsed = True
+    def parse(self, subject_line):
+        self._clear()
+        subject_line = re.sub(self.RE_FW_PATTERN, "", subject_line).strip()
+        self._choose_thread_type(subject_line)
+        self._choose_job_name(subject_line)
+        self._is_parsed = True
+    
+    def _clear(self):
+        self._chosen.clear()
+        self._best_subject_line_match.clear()
+        self._is_parsed = False
 
-    def choose_thread_type(self):
-        strings = self.subject_line.split(" ")
+    def _choose_thread_type(self, subject_line):
+        strings = subject_line.split(" ")
         choice = None
         subject_line_match = None
         high_score = 0
@@ -199,17 +212,17 @@ class SubjectLineParser:
                 high_score = ans[1]
                 choice = c
                 subject_line_match = ans[0]
-        if high_score <= self.min_score_allowed:
-            self.chosen['threadType'] = 'Unknown'
+        if high_score <= self._min_score_allowed:
+            self._chosen['threadType'] = 'Unknown'
         else:
-            self.chosen['threadType'] = choice
-        self.best_subject_line_match['threadType'] = subject_line_match
+            self._chosen['threadType'] = choice
+        self._best_subject_line_match['threadType'] = subject_line_match
 
-    def choose_job_name(self):
+    def _choose_job_name(self, subject_line):
         highest_score = 0
         best_choice = None
         best_subject_line_match = None
-        string = re.sub(self.best_subject_line_match['threadType'], "", self.subject_line).strip()
+        string = re.sub(self._best_subject_line_match['threadType'], "", subject_line).strip()
         for j in self.JOB_NAMES:
             prev_score = 0
             prev_subject_line_match = None
@@ -231,22 +244,131 @@ class SubjectLineParser:
                 best_choice = j
                 best_subject_line_match = prev_subject_line_match
 
-        if highest_score <= self.min_score_allowed:
-            self.chosen['jobName'] = 'Unknown'
+        if highest_score <= self._min_score_allowed:
+            self._chosen['jobName'] = 'Unknown'
         else:
-            self.chosen['jobName'] = best_choice
-        self.best_subject_line_match['jobName'] = best_subject_line_match
+            self._chosen['jobName'] = best_choice
+        self._best_subject_line_match['jobName'] = best_subject_line_match
 
     @property
     def thread_type(self):
-        assert self.is_parsed
-        return self.chosen.get('threadType', 'Unknown')
+        assert self._is_parsed
+        return self._chosen.get('threadType', 'Unknown')
 
     @property
     def job_name(self):
-        assert self.is_parsed
-        return self.chosen.get('jobName', 'Unknown')
+        assert self._is_parsed
+        return self._chosen.get('jobName', 'Unknown')
 
 
 class GmailParser:
-    pass
+    def __init__(self) -> None:
+        self._subject_parser = SubjectLineParser()
+        self._chosen = {}
+        self._is_parsed = False
+
+    def parse(self, gmail_message):
+        self._clear()
+        assert gmail_message, "Message cannot be null"
+        self._chosen["message_id"] = gmail_message["id"]
+        self._chosen["thread_id"] = gmail_message["threadId"]
+
+        payload = gmail_message.get("payload", None)
+        assert payload, "Payload cannot be None"
+        self._parse_parts(payload.get("parts"))
+        self._parse_headers(payload.get("headers"))
+        self._subject_parser.parse(self._chosen["headers"]["Subject"])
+        self._is_parsed = True
+    
+    def _clear(self):
+        self._is_parsed = False
+        self._chosen.clear()
+        
+    def _parse_parts(self, parts, *args, **kwargs):
+        self._chosen['body'] = []     
+        if not parts:
+            return
+        for p in parts:
+            filename = p.get("filename")
+            mimeType = p.get("mimeType")
+            body = p.get("body")
+            data = body.get("data")
+            file_size = body.get("size")
+            p_headers = p.get("headers")
+            if p.get("parts"):
+                self.parse_parts(p.get("parts"))
+            if mimeType == "text/plain" and data:
+                email_message = parser.BytesParser(_class=py_email_message.EmailMessage, policy=policy.default).parsebytes(urlsafe_b64decode(data))
+                parsed_email_message = EmailReplyParser.parse_reply(str(email_message.get_body()))
+                self._chosen['body'] = [parsed_email_message]
+
+    def _parse_headers(self, headers, *args, **kwargs):
+        self._chosen['headers'] = {
+            "Subject": "Unknown",
+            "From": "Unknown",
+            "To": "Unknown",
+            "Date": f"{datetime.utcnow()}"
+        }
+        if not headers:
+            return 
+        for h in headers:
+            head = h.get("name")
+            value = h.get("value")
+            if head == "Subject":
+                self._chosen['headers']["Subject"] = value
+            elif head == "From":
+                self._chosen['headers']["From"] = value
+            elif head == "To":
+                self._chosen['headers']["To"] = value
+            elif head == "Date":
+                self._chosen['headers']["Date"] = value
+                
+    @property
+    def message_id(self):
+        assert self._is_parsed
+        return self._chosen["message_id"]
+
+    @property
+    def thread_id(self):
+        assert self._is_parsed
+        return self._chosen["thread_id"]
+
+    @property
+    def body(self):
+        assert self._is_parsed
+        return self._chosen["body"]
+
+    @property
+    def headers(self):
+        assert self._is_parsed
+        return self._chosen["headers"]
+
+    @property
+    def subject(self):
+        assert self._is_parsed
+        return self._chosen["headers"]["Subject"]
+
+    @property
+    def fromm(self):
+        assert self._is_parsed
+        return self._chosen["headers"]["From"]
+
+    @property
+    def to(self):
+        assert self._is_parsed
+        return self._chosen["headers"]["To"]
+       
+    @property
+    def date(self):
+        assert self._is_parsed
+        return self._chosen["headers"]["Date"]
+
+    @property
+    def thread_type(self):
+        assert self._is_parsed
+        return self._subject_parser.thread_type
+
+    @property
+    def job_name(self):
+        assert self._is_parsed
+        return self._subject_parser.job_name
