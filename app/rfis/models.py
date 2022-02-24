@@ -65,8 +65,6 @@ class MessageThread(models.Model):
 
     def __str__(self):
         return self.subject
-
-
 class Message(models.Model):
     message_id = models.CharField(max_length=100)
     message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)

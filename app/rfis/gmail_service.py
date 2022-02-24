@@ -5,7 +5,8 @@ from time import sleep
 from dateparser import parse
 from functools import wraps
 from typing import Dict, List
-from email import parser, message_from_string, message_from_bytes, message as py_email_message, policy
+from email import parser, message as py_email_message, policy
+import re
 
 from django.conf import settings
 
@@ -107,8 +108,7 @@ class GmailService():
         self.service.users().messages().batchModify(userId='me', body=body).execute()
     
     #@error_handler
-    def parse_parts(self, parts, msg, *args, **kwargs):
-        
+    def parse_parts(self, parts, msg, *args, **kwargs):     
         if not parts:
             return msg
 
@@ -119,20 +119,10 @@ class GmailService():
             data = body.get("data")
             file_size = body.get("size")
             p_headers = p.get("headers")
-            print("data: ", urlsafe_b64decode(data).decode())
             if p.get("parts"):
                 self.parse_parts(p.get("parts"), msg)
-
             if mimeType == "text/plain" and data:
-                #msg += urlsafe_b64decode(data).decode()
-
                 msg = parser.BytesParser(_class=py_email_message.EmailMessage, policy=policy.default).parsebytes(urlsafe_b64decode(data))
-
-            elif mimeType == "text/html":
-                print("")
-                #print("\nhtml data: ", urlsafe_b64decode(data).decode(), "\n")
-                #html = urlsafe_b64decode(data).decode()
-
         return msg
 
     #@error_handler
@@ -164,25 +154,21 @@ class GmailService():
         }
         if subject is None or subject == "":
             return data
-
-        subject.replace("RE:", "")
-        subject.replace("Re:", "")
-        subject.replace("RE", "")
+        pattern = r'(RE:|RE|Re:|FW|FW:|Fw:)'
         fields = ["ThreadType", "JobName"]
         parts = subject.split(" ")
         for i in range(min(len(fields), len(parts))):
             data[fields[i]] = parts[i]
         return data
 
-def parse_email(email: str):
+def parse_email_address(email: str):
     """
     Emails from Gmail will sometimes be in the form
     Name <email> or name email this function pulls the email out.
     """
     index = email.find("@")
     if index == -1:
-        print("Malformed Email")
-        return "unknown@unknown.com"
+        return "Unknown"
     right = index
     while right < len(email) and email[right] not in (">", "<", " ", "/"):
         right += 1
@@ -191,7 +177,7 @@ def parse_email(email: str):
         left -= 1
     return email[left + 1 : right]
 
-
+#TODO cleanup parsing, middle reply was lost for some reason out of the three replies, dont parse emails,
 def add_unread_messages():
     service = GmailService()
     unread_message_ids: List[Dict] = service.get_unread_messages().get("messages")
@@ -210,11 +196,7 @@ def add_unread_messages():
         service.messages_read.append(m_id)
         message = service.get_message(m_id["id"])
         payload = message.get("payload")
-        #print(message)
-        #print("\n\n", message, "\n\n")
         if message and payload:
-
-            #print("message from bytes: ", message_from_bytes(bytes(message)))
             txt = service.parse_parts(payload.get("parts"), py_email_message.EmailMessage())
             headers = service.parse_headers(payload.get("headers"))
             threadtype_jobname = service.parse_subject(headers.get("Subject"))

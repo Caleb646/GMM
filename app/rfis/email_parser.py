@@ -1,6 +1,9 @@
 import re
+from thefuzz import process, fuzz
 
-#https://github.com/zapier/email-reply-parser
+from .models import MessageThread, Job
+
+# Code was taken from here: https://github.com/zapier/email-reply-parser and modified
 class EmailReplyParser(object):
     """ Represents a email message that is parsed.
     """
@@ -164,4 +167,86 @@ class Fragment(object):
     @property
     def content(self):
         return self._content.strip()
-#return {'emailstring': EmailReplyParser.parse_reply(input_data['body'])}
+
+#TODO move all parsing into here
+class SubjectLineParser:
+    RE_FW_PATTERN = r'(RE|Re|FW|Fw|:)'
+    THREAD_TYPE_CHOICES = MessageThread.ThreadTypes.choices
+    JOB_NAMES = [j.name for j in Job.objects.all()]
+    
+    def __init__(self, subject_line) -> None:
+        self.subject_line = subject_line
+        self.chosen = {}
+        self.best_subject_line_match = {}
+        self.min_score_allowed = 50
+        self.is_parsed = False
+        self.parse()
+
+    def parse(self):
+        self.subject_line = re.sub(self.RE_FW_PATTERN, "", self.subject_line).strip()
+        self.choose_thread_type()
+        self.choose_job_name()
+        self.is_parsed = True
+
+    def choose_thread_type(self):
+        strings = self.subject_line.split(" ")
+        choice = None
+        subject_line_match = None
+        high_score = 0
+        for c in self.THREAD_TYPE_CHOICES:
+            ans = process.extractOne(c, strings)
+            if ans[1] > high_score:
+                high_score = ans[1]
+                choice = c
+                subject_line_match = ans[0]
+        if high_score <= self.min_score_allowed:
+            self.chosen['threadType'] = 'Unknown'
+        else:
+            self.chosen['threadType'] = choice
+        self.best_subject_line_match['threadType'] = subject_line_match
+
+    def choose_job_name(self):
+        highest_score = 0
+        best_choice = None
+        best_subject_line_match = None
+        string = re.sub(self.best_subject_line_match['threadType'], "", self.subject_line).strip()
+        for j in self.JOB_NAMES:
+            prev_score = 0
+            prev_subject_line_match = None
+
+            current_score = fuzz.ratio(j, string)   
+            current_subject_line_match = string
+
+            count = len(string)
+            while current_score > prev_score and count >= 0:
+                prev_score = current_score
+                prev_subject_line_match = current_subject_line_match
+
+                current_subject_line_match = current_subject_line_match[:-1] #remove last character
+                current_score = fuzz.ratio(j, current_subject_line_match)
+
+                count -= 1
+            if prev_score > highest_score:
+                highest_score = prev_score
+                best_choice = j
+                best_subject_line_match = prev_subject_line_match
+
+        if highest_score <= self.min_score_allowed:
+            self.chosen['jobName'] = 'Unknown'
+        else:
+            self.chosen['jobName'] = best_choice
+        self.best_subject_line_match['jobName'] = best_subject_line_match
+
+    @property
+    def thread_type(self):
+        assert self.is_parsed
+        return self.chosen.get('threadType', 'Unknown')
+
+    @property
+    def job_name(self):
+        assert self.is_parsed
+        return self.chosen.get('jobName', 'Unknown')
+
+
+class GmailParser:
+    pass

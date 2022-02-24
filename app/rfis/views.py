@@ -22,7 +22,7 @@ class MyView(View):
 
 
 class MessageThreadDetailedView(View):
-    template_name = 'rfis/detailed.html'
+    template_name = 'admin/message_thread/detailed.html'
 
     def get(self, request, *args, **kwargs):
         message_thread = MessageThread.objects.get(pk=kwargs["pk"])

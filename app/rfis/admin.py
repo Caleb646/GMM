@@ -60,12 +60,6 @@ class MessageThreadAdmin(admin.ModelAdmin):
             f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
         )
 
-    def edit_button(self, object):
-        return format_html(
-            "<button onclick=doSomething({})>Edit</button>", 
-            object.id, 
-        )
-
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
