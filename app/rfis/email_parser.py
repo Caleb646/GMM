@@ -1,8 +1,10 @@
 import re
+from typing import List
 from thefuzz import process, fuzz
-from datetime import datetime
+from django.utils import timezone
 from email import parser, message as py_email_message, policy
 from base64 import urlsafe_b64decode
+from bs4 import BeautifulSoup
 
 from .models import MessageThread, Job
 
@@ -179,8 +181,10 @@ class Fragment(object):
 
 #TODO move all parsing into here
 class SubjectLineParser:
-    RE_FW_PATTERN = r'(RE|Re|FW|Fw|:)'
+    RE_FW_PATTERN = re.compile(r'(RE|FW|FWD|Fw|:)')
     THREAD_TYPE_CHOICES = MessageThread.ThreadTypes.choices
+    #wont work on a clean restart of the database. Models have to be
+    #created first with this commented out
     JOB_NAMES = [j.name for j in Job.objects.all()]
     
     def __init__(self) -> None:
@@ -191,9 +195,9 @@ class SubjectLineParser:
 
     def parse(self, subject_line):
         self._clear()
-        subject_line = re.sub(self.RE_FW_PATTERN, "", subject_line).strip()
-        self._choose_thread_type(subject_line)
-        self._choose_job_name(subject_line)
+        self._clean_subject_line(subject_line)
+        self._choose_thread_type()
+        self._choose_job_name()
         self._is_parsed = True
     
     def _clear(self):
@@ -201,12 +205,15 @@ class SubjectLineParser:
         self._best_subject_line_match.clear()
         self._is_parsed = False
 
-    def _choose_thread_type(self, subject_line):
-        strings = subject_line.split(" ")
+    def _clean_subject_line(self, subject_line):
+        self._subject_line = re.sub(self.RE_FW_PATTERN, "", subject_line).strip()
+
+    def _choose_thread_type(self):
+        strings = self._subject_line.split(" ")
         choice = None
         subject_line_match = None
         high_score = 0
-        for c in self.THREAD_TYPE_CHOICES:
+        for c, _ in self.THREAD_TYPE_CHOICES:
             ans = process.extractOne(c, strings)
             if ans[1] > high_score:
                 high_score = ans[1]
@@ -218,11 +225,11 @@ class SubjectLineParser:
             self._chosen['threadType'] = choice
         self._best_subject_line_match['threadType'] = subject_line_match
 
-    def _choose_job_name(self, subject_line):
+    def _choose_job_name(self):
         highest_score = 0
         best_choice = None
         best_subject_line_match = None
-        string = re.sub(self._best_subject_line_match['threadType'], "", subject_line).strip()
+        string = re.sub(self._best_subject_line_match['threadType'], "", self._subject_line).strip()
         for j in self.JOB_NAMES:
             prev_score = 0
             prev_subject_line_match = None
@@ -251,6 +258,11 @@ class SubjectLineParser:
         self._best_subject_line_match['jobName'] = best_subject_line_match
 
     @property
+    def parsed_subject_line(self):
+        assert self._is_parsed
+        return self._subject_line
+
+    @property
     def thread_type(self):
         assert self._is_parsed
         return self._chosen.get('threadType', 'Unknown')
@@ -262,6 +274,9 @@ class SubjectLineParser:
 
 
 class GmailParser:
+    EMAIL_ADDRESS_PATTERN = re.compile(r'([a-zA-Z0-9+._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)')
+    HTML_BODY_PATTERN = re.compile(r'(From|To|RE|FWD|FW|wrote):')
+
     def __init__(self) -> None:
         self._subject_parser = SubjectLineParser()
         self._chosen = {}
@@ -269,13 +284,14 @@ class GmailParser:
 
     def parse(self, gmail_message):
         self._clear()
-        assert gmail_message, "Message cannot be null"
+        if not gmail_message:
+            return
         self._chosen["message_id"] = gmail_message["id"]
         self._chosen["thread_id"] = gmail_message["threadId"]
-
-        payload = gmail_message.get("payload", None)
+        payload = gmail_message.get("payload")
+        #print("\npayload: ", payload, "\n")
         assert payload, "Payload cannot be None"
-        self._parse_parts(payload.get("parts"))
+        self._parse_payload(payload)
         self._parse_headers(payload.get("headers"))
         self._subject_parser.parse(self._chosen["headers"]["Subject"])
         self._is_parsed = True
@@ -283,9 +299,41 @@ class GmailParser:
     def _clear(self):
         self._is_parsed = False
         self._chosen.clear()
-        
-    def _parse_parts(self, parts, *args, **kwargs):
-        self._chosen['body'] = []     
+
+    def _parse_html_data(self, data, *args, **kwargs):
+        soup = BeautifulSoup(urlsafe_b64decode(data).decode(), "html.parser")
+        text = EmailReplyParser.parse_reply(soup.get_text())
+        self._chosen["debug_unparsed_body"].append(text) # store all of the text before the regex is applied for debugging
+        match = re.search(self.HTML_BODY_PATTERN, text)
+
+        #print("\n############ start html text: #####################\n", text, "\n################ end text ###################################\n")
+        if match:
+            return text[: match.span()[0]]
+        return text
+    
+    def _parse_txt_data(self, data, *args, **kwargs):
+        decoded_data = urlsafe_b64decode(data)
+        self._chosen["debug_unparsed_body"].append(decoded_data.decode()) # store all of the text before the regex is applied for debugging
+        email_message = parser.BytesParser(_class=py_email_message.EmailMessage, policy=policy.default).parsebytes(decoded_data)
+
+        #print("\n################## start raw text: ##########################\n", email_message, "\n######################### end raw text ##############################\n")
+        return EmailReplyParser.parse_reply(str(email_message.get_body()))
+
+    def _parse_payload(self, payload):
+        mime_type = payload.get("mimeType")
+        self._chosen['body'] = []
+        self._chosen['debug_unparsed_body'] = []
+        if mime_type == "multipart/alternative":
+            assert payload.get("parts")
+            self._parse_parts(payload.get("parts"))
+        #elif mime_type == "text/plain":
+            #self._chosen['body'].append(self._parse_txt_data(payload["body"]["data"]))
+        elif mime_type == "text/html":
+            self._chosen['body'].append(self._parse_html_data(payload["body"]["data"]))
+        else:
+            print(f"Unknown mimeType: {mime_type}")
+
+    def _parse_parts(self, parts, *args, **kwargs):   
         if not parts:
             return
         for p in parts:
@@ -296,18 +344,20 @@ class GmailParser:
             file_size = body.get("size")
             p_headers = p.get("headers")
             if p.get("parts"):
-                self.parse_parts(p.get("parts"))
-            if mimeType == "text/plain" and data:
-                email_message = parser.BytesParser(_class=py_email_message.EmailMessage, policy=policy.default).parsebytes(urlsafe_b64decode(data))
-                parsed_email_message = EmailReplyParser.parse_reply(str(email_message.get_body()))
-                self._chosen['body'] = [parsed_email_message]
+                self._parse_parts(p.get("parts"))
+
+            #if mimeType == "text/plain" and data:            
+                #self._chosen['body'].append(self._parse_txt_data(data))
+
+            if mimeType == "text/html":
+                self._chosen['body'].append(self._parse_html_data(data))
 
     def _parse_headers(self, headers, *args, **kwargs):
         self._chosen['headers'] = {
             "Subject": "Unknown",
             "From": "Unknown",
             "To": "Unknown",
-            "Date": f"{datetime.utcnow()}"
+            "Date": f"{timezone.now()}"
         }
         if not headers:
             return 
@@ -317,12 +367,21 @@ class GmailParser:
             if head == "Subject":
                 self._chosen['headers']["Subject"] = value
             elif head == "From":
-                self._chosen['headers']["From"] = value
+                self._chosen['headers']["From"] = self._parse_email_address(value)[0]
             elif head == "To":
-                self._chosen['headers']["To"] = value
+                self._chosen['headers']["To"] = " ".join(self._parse_email_address(value))
+            elif head == "Cc":
+                self._chosen['headers']["Cc"] = " ".join(self._parse_email_address(value))
             elif head == "Date":
                 self._chosen['headers']["Date"] = value
-                
+
+    #TODO remove duplicate email addresses
+    def _parse_email_address(self, email_string: str):
+        address_or_addresses: List[str] = re.findall(self.EMAIL_ADDRESS_PATTERN, email_string)
+        if len(address_or_addresses) == 0:
+            return [""]
+        return address_or_addresses
+
     @property
     def message_id(self):
         assert self._is_parsed
@@ -336,7 +395,12 @@ class GmailParser:
     @property
     def body(self):
         assert self._is_parsed
-        return self._chosen["body"]
+        return "".join(self._chosen["body"])
+
+    @property
+    def debug_unparsed_body(self):
+        assert self._is_parsed
+        return "".join(self._chosen["debug_unparsed_body"])
 
     @property
     def headers(self):
@@ -346,7 +410,7 @@ class GmailParser:
     @property
     def subject(self):
         assert self._is_parsed
-        return self._chosen["headers"]["Subject"]
+        return self._subject_parser.parsed_subject_line
 
     @property
     def fromm(self):
@@ -357,6 +421,11 @@ class GmailParser:
     def to(self):
         assert self._is_parsed
         return self._chosen["headers"]["To"]
+
+    @property
+    def cc(self):
+        assert self._is_parsed
+        return self._chosen["headers"]["Cc"]
        
     @property
     def date(self):

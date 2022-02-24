@@ -50,9 +50,12 @@ class MessageThreadAdmin(admin.ModelAdmin):
             'thread_status',
         )
     list_display = (
-            'job_id', 'message_thread_initiator', 
-            'subject', 'thread_status', 'due_date',
-            'detailed_view_button', 'edit_button'
+            'job_id', 
+            'message_thread_initiator', 
+            'subject', 
+            'thread_status', 
+            'due_date',
+            'detailed_view_button'
         )
 
     def detailed_view_button(self, object):
@@ -66,7 +69,15 @@ class MessageThreadAdmin(admin.ModelAdmin):
             path('<int:pk>/detail-view/', MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
         ]
         return custom_urls + urls
-        
+
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = (
+            'message_id', 
+            'subject', 
+            'fromm', 
+            'time_received',
+        )
 
 
 admin.site.site_header = "Dashboard"
@@ -74,7 +85,7 @@ admin.site.site_title = "Dashboard"
 admin.site.register(MyUser, MyUserAdmin)
 admin.site.register(Job, JobAdmin)
 admin.site.register(MessageThread, MessageThreadAdmin)
-admin.site.register(Message)
+admin.site.register(Message, MessageAdmin)
 admin.site.register(Attachment)
 
 # admin_site = MyAdminSite()

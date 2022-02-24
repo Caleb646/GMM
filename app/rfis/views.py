@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.views import View
 from django.conf import settings
 
-from .gmail_service import add_unread_messages
+from .gmail_service import add_unread_messages, get_test_message
 from .models import MessageThread, Message
 
 class MyView(View):
@@ -17,6 +17,7 @@ class MyView(View):
 
     def post(self, request, *args, **kwargs):
         add_unread_messages()
+        #get_test_message('17f2d45406e51d68')
         return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL, "msg" : "Successfully post"})
 
 

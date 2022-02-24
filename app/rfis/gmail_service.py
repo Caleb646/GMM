@@ -1,12 +1,10 @@
 import os.path
-from base64 import urlsafe_b64decode
 from datetime import datetime
+from django.utils import timezone
 from time import sleep
 from dateparser import parse
 from functools import wraps
 from typing import Dict, List
-from email import parser, message as py_email_message, policy
-import re
 
 from django.conf import settings
 
@@ -17,7 +15,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from .models import Job, MessageThread, Message, Attachment
-from .email_parser import EmailReplyParser
+from .email_parser import GmailParser
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
 
@@ -88,100 +86,25 @@ class GmailService():
     #@error_handler
     @token_refresh
     def get_unread_messages(self, *args, **kwargs):
-        try:
-            return self.service.users().messages().list(userId='me', q="label:inbox is:unread").execute()
-        except:
-            return None
+        return self.service.users().messages().list(userId='me', q="label:inbox is:unread").execute()
 
     #@error_handler
     @token_refresh
     def get_message(self, message_id, *args, **kwargs):
-        try:
-            return self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
-        except:
-            return None
+        return self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
 
     #@error_handler
     @token_refresh
     def mark_read_messages(self):
         body = {'ids' : [msg["id"] for msg in self.messages_read], 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
         self.service.users().messages().batchModify(userId='me', body=body).execute()
-    
-    #@error_handler
-    def parse_parts(self, parts, msg, *args, **kwargs):     
-        if not parts:
-            return msg
 
-        for p in parts:
-            filename = p.get("filename")
-            mimeType = p.get("mimeType")
-            body = p.get("body")
-            data = body.get("data")
-            file_size = body.get("size")
-            p_headers = p.get("headers")
-            if p.get("parts"):
-                self.parse_parts(p.get("parts"), msg)
-            if mimeType == "text/plain" and data:
-                msg = parser.BytesParser(_class=py_email_message.EmailMessage, policy=policy.default).parsebytes(urlsafe_b64decode(data))
-        return msg
-
-    #@error_handler
-    def parse_headers(self, headers, *args, **kwargs):
-        data = {
-            "Subject": "Unknown",
-            "From": "Unknown",
-            "To": "Unknown",
-            "Date": f"{datetime.utcnow()}"
-        }
-        for h in headers:
-            head = h.get("name")
-            value = h.get("value")
-            if head == "Subject":
-                data["Subject"] = value
-            elif head == "From":
-                data["From"] = value
-            elif head == "To":
-                data["To"] = value
-            elif head == "Date":
-                data["Date"] = value
-        return data
-
-    #@error_handler
-    def parse_subject(self, subject: str, *args, **kwargs):
-        data = {
-            "ThreadType" : settings.DEFAULT_THREAD_TYPE,
-            "JobName" : settings.DEFAULT_JOB_NAME
-        }
-        if subject is None or subject == "":
-            return data
-        pattern = r'(RE:|RE|Re:|FW|FW:|Fw:)'
-        fields = ["ThreadType", "JobName"]
-        parts = subject.split(" ")
-        for i in range(min(len(fields), len(parts))):
-            data[fields[i]] = parts[i]
-        return data
-
-def parse_email_address(email: str):
-    """
-    Emails from Gmail will sometimes be in the form
-    Name <email> or name email this function pulls the email out.
-    """
-    index = email.find("@")
-    if index == -1:
-        return "Unknown"
-    right = index
-    while right < len(email) and email[right] not in (">", "<", " ", "/"):
-        right += 1
-    left = index
-    while left >= 0 and email[left] not in (">", "<", " ", "/"):
-        left -= 1
-    return email[left + 1 : right]
-
-#TODO cleanup parsing, middle reply was lost for some reason out of the three replies, dont parse emails,
+#TODO middle reply was lost for some reason out of the three replies
 def add_unread_messages():
     service = GmailService()
+    g_parser = GmailParser()
     unread_message_ids: List[Dict] = service.get_unread_messages().get("messages")
-    if unread_message_ids is None:
+    if not unread_message_ids:
         return
     current_count = 0
     max_count_before_sleep = 25
@@ -191,35 +114,32 @@ def add_unread_messages():
         if current_count > max_count_before_sleep:
             current_count = 0
             sleep(0.25)
-        #store message id and thread id so these messages can be marked
-        #as read later
+        #store message id so these messages can be marked as read later
         service.messages_read.append(m_id)
-        message = service.get_message(m_id["id"])
-        payload = message.get("payload")
-        if message and payload:
-            txt = service.parse_parts(payload.get("parts"), py_email_message.EmailMessage())
-            headers = service.parse_headers(payload.get("headers"))
-            threadtype_jobname = service.parse_subject(headers.get("Subject"))
+        g_parser.parse(service.get_message(m_id["id"]))
 
-            print("\n\ntxt: ", EmailReplyParser.parse_reply(str(txt.get_body())))
-            # print("Headers: ", headers)
-            # print("threadtype_jobname", threadtype_jobname)
-            # print("\n\n")
-            job = Job.objects.get_or_unknown(threadtype_jobname["JobName"])
-            message_thread = MessageThread.objects.create_or_get(
-                m_id["threadId"], job_id=job,
-                subject=headers["Subject"],
-                due_date=datetime.utcnow(),
-                message_thread_initiator=headers["From"]
-            )
-            my_message = Message.objects.create_or_get(
-                m_id["id"],
-                message_thread_id=message_thread,
-                subject=headers["Subject"],
-                body=txt,
-                fromm=headers["From"],
-                to=headers["To"],
-                #time_received=datetime.strptime(headers["Date"], "%a %d %b %Y %X %z")
-                time_received=parse(headers["Date"])
-            )
+        job = Job.objects.get_or_unknown(g_parser.job_name)
+        message_thread = MessageThread.objects.create_or_get(
+            g_parser.thread_id,
+            job_id=job,
+            subject=g_parser.subject,
+            message_thread_initiator=g_parser.fromm
+        )
+        Message.objects.create_or_get(
+            g_parser.message_id,
+            message_thread_id=message_thread,
+            subject=g_parser.subject,
+            body=g_parser.body,
+            debug_unparsed_body=g_parser.debug_unparsed_body,
+            fromm=g_parser.fromm,
+            to=g_parser.to,
+            #time_received=datetime.strptime(headers["Date"], "%a %d %b %Y %X %z")
+            time_received=parse(g_parser.date)
+        )
     #service.mark_read_messages()
+
+def get_test_message(message_id):
+    service = GmailService()
+    parser = GmailParser()
+    parser.parse(service.get_message(message_id))
+    print(parser._chosen)

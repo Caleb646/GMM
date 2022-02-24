@@ -1,5 +1,7 @@
+import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
 
@@ -24,6 +26,11 @@ class Job(models.Model):
 
     class Meta:
         ordering = ["start_date"]
+
+    def save(self, *args, **kwargs):
+        if not self.start_date:
+            self.start_date = timezone.now()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -60,6 +67,11 @@ class MessageThread(models.Model):
 
     objects = MessageThreadManager()
 
+    def save(self, *args, **kwargs):
+        if not self.due_date:
+            self.due_date = timezone.now() + datetime.timedelta(days=7)
+        return super().save(*args, **kwargs)
+
     class Meta:
         ordering = ["due_date"]
 
@@ -69,15 +81,21 @@ class Message(models.Model):
     message_id = models.CharField(max_length=100)
     message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)
     subject = models.CharField(max_length=400)
-    body = models.TextField()
+    body = models.TextField(default="")
+    debug_unparsed_body = models.TextField(default="")
     fromm = models.EmailField()
     to = models.CharField(max_length=100)
-    time_received = models.DateTimeField()
+    time_received = models.DateTimeField(default=timezone.now)
 
     objects = MessageManager()
 
     class Meta:
         ordering = ["time_received"]
+
+    def save(self, *args, **kwargs):
+        if not self.time_received:
+            self.time_received = timezone.now()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.subject
