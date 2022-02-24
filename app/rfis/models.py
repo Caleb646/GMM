@@ -21,6 +21,10 @@ class Job(models.Model):
     start_date = models.DateTimeField()
 
     objects = JobManager()
+
+    class Meta:
+        ordering = ["start_date"]
+
     def __str__(self):
         return self.name
 
@@ -28,6 +32,8 @@ class Job(models.Model):
 class MessageThread(models.Model):
     gmail_thread_id = models.CharField(max_length=100)
     job_id = models.ForeignKey(Job, on_delete=models.CASCADE)
+
+    subject = models.CharField(max_length=400)
     class ThreadTypes(models.TextChoices):
         RFI = "RFI"
 
@@ -54,20 +60,26 @@ class MessageThread(models.Model):
 
     objects = MessageThreadManager()
 
+    class Meta:
+        ordering = ["due_date"]
+
     def __str__(self):
-        return self.message_thread_initiator
+        return self.subject
 
 
 class Message(models.Model):
     message_id = models.CharField(max_length=100)
     message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)
-    subject = models.CharField(max_length=200)
+    subject = models.CharField(max_length=400)
     body = models.TextField()
     fromm = models.EmailField()
     to = models.CharField(max_length=100)
     time_received = models.DateTimeField()
 
     objects = MessageManager()
+
+    class Meta:
+        ordering = ["time_received"]
 
     def __str__(self):
         return self.subject

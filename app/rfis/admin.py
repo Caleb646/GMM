@@ -1,6 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.http import HttpResponse
+from django.urls import path, reverse
+from django.utils.html import format_html
 
+from admin_searchable_dropdown.filters import AutocompleteFilter
+
+from .views import MessageThreadDetailedView
 from .forms import MyUserCreateForm, MyUserChangeForm
 from .models import MyUser, Job, MessageThread, Message, Attachment
 
@@ -11,7 +17,7 @@ class MyUserAdmin(UserAdmin):
     form = MyUserChangeForm
     model = MyUser
     list_display = ('email', 'is_staff', 'is_active',)
-    list_filter = ('email', 'is_staff', 'is_active',)
+    list_filter = ('is_staff', 'is_active',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Permissions', {'fields': ('is_staff', 'is_active')}),
@@ -26,9 +32,65 @@ class MyUserAdmin(UserAdmin):
     search_fields = ('email',)
     ordering = ('email',)
 
+class JobAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ('name', 'start_date')
 
+
+class MessageThreadFilter(AutocompleteFilter):
+    title = 'Job' # display title
+    field_name = 'job_id' # name of the foreign key field
+
+
+class MessageThreadAdmin(admin.ModelAdmin):
+    search_fields = ('subject__startswith', )
+    list_filter = (
+            MessageThreadFilter,
+            'thread_type',
+            'thread_status',
+        )
+    list_display = (
+            'job_id', 'message_thread_initiator', 
+            'subject', 'thread_status', 'due_date',
+            'detailed_view_button', 'edit_button'
+        )
+
+    def detailed_view_button(self, object):
+        return format_html(
+            f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
+        )
+
+    def edit_button(self, object):
+        return format_html(
+            "<button onclick=doSomething({})>Edit</button>", 
+            object.id, 
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:pk>/detail-view/', MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+        ]
+        return custom_urls + urls
+        
+
+
+admin.site.site_header = "Dashboard"
+admin.site.site_title = "Dashboard"
 admin.site.register(MyUser, MyUserAdmin)
-admin.site.register(Job)
-admin.site.register(MessageThread)
+admin.site.register(Job, JobAdmin)
+admin.site.register(MessageThread, MessageThreadAdmin)
 admin.site.register(Message)
 admin.site.register(Attachment)
+
+# admin_site = MyAdminSite()
+# admin_site.site_header = "Dashboard"
+# admin_site.site_title = "Dashboard"
+# admin_site.register(MyUser, MyUserAdmin)
+# admin_site.register(Job, JobAdmin)
+# admin_site.register(MessageThread, MessageThreadAdmin)
+# admin_site.register(Message)
+# admin_site.register(Attachment)
+
+
+

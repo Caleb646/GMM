@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block inherited_content %}
+    <div class="container-fluid">
+        {% for my_message in my_messages %}
+            <div class="row">
+                <div class="card" style="">
+                    <div class="card-body">
+                      <h6 class="card-subtitle mb-2 text-muted">Subject: {{ my_message.subject }}</h6>
+                      <h6 class="card-subtitle mb-2 text-muted">From: {{ my_message.fromm }}</h6>
+                      <h6 class="card-subtitle mb-2 text-muted">To: {{ my_message.to }}</h6>
+                      <h6 class="card-subtitle mb-2 text-muted">Received: {{ my_message.time_received }}</h6>
+                      <p class="card-text">{{ my_message.body }}</p>
+                      <a href="#" class="card-link">TODO: Put Attachment Links Here</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>  
+{% endblock %}

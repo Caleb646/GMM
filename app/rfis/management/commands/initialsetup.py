@@ -16,7 +16,8 @@ USERS = {
 }
 
 JOBS = [
-    {"name" : settings.DEFAULT_JOB_NAME, "start_date" : datetime.utcnow()}
+    {"name" : settings.DEFAULT_JOB_NAME, "start_date" : datetime.utcnow()},
+    {"name" : "TestJob", "start_date" : datetime.utcnow()}
 ]
 
 

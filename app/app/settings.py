@@ -25,15 +25,18 @@ DOMAIN_URL = os.getenv("DOMAIN_URL")
 GMAIL_SECRETS = os.path.join(BASE_DIR, os.getenv("GMAIL_SECRETS_FILENAME"))
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 DEFAULT_JOB_NAME = "Unknown"
+DEFAULT_THREAD_TYPE = "Unknown"
 
 INSTALLED_APPS = [
+    'rfis',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rfis' 
+    'django.contrib.staticfiles',  
+
+    'admin_searchable_dropdown',
 ]
 
 MIDDLEWARE = [
@@ -51,7 +54,7 @@ ROOT_URLCONF = 'app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR)],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
