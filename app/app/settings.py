@@ -16,14 +16,14 @@ from dotenv import load_dotenv
 
 load_dotenv(r"C:/Users/MyCod/Coding Projects/Python Projects/RFI App/app/.env.dev")
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = bool(int(os.getenv("DEBUG", default="0")))
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 DOMAIN_URL = os.getenv("DOMAIN_URL")
-GMAIL_SECRETS = os.path.join(BASE_DIR, os.getenv("GMAIL_SECRETS_FILENAME"))
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+#TODO move these to the constants file
 DEFAULT_JOB_NAME = "Unknown"
 DEFAULT_THREAD_TYPE = "Unknown"
 

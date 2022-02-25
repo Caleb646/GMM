@@ -1,5 +1,5 @@
-from multiprocessing.sharedctypes import Value
-import os.path
+import math
+import os
 from time import sleep
 from dateparser import parse
 from functools import wraps
@@ -9,7 +9,6 @@ from django.conf import settings
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -62,9 +61,23 @@ class GmailService():
     def build_service(self, *args, **kwargs):
         return build('gmail', 'v1', credentials=self.get_credentials())
 
+    def find_earliest_message_index(self, messages: List[Dict]):
+        earliest_message_index = 0
+        earliest_message_time = math.inf
+        for i, msg in enumerate(messages):
+            msg_date = int(msg["internalDate"])
+            if msg_date < earliest_message_time:
+                earliest_message_time = msg_date 
+                earliest_message_index = i
+        return earliest_message_index
+
     @token_refresh
-    def get_threads(self, *args, **kwargs):
-        return self.service.users().threads().list(userId='me', q="label:inbox").execute().get('threads', [])
+    def get_threads(self, query_params = "label:inbox is:unread", *args, **kwargs):
+        return self.service.users().threads().list(userId='me', q=query_params).execute().get('threads', [])
+    
+    @token_refresh
+    def get_thread(self, thread_id, *args, **kwargs):
+        return self.service.users().threads().get(userId='me', id=thread_id, format='full').execute()
 
     @token_refresh
     def get_unread_messages(self, *args, **kwargs):
@@ -82,39 +95,52 @@ class GmailService():
 def add_unread_messages():
     service = GmailService()
     g_parser = GmailParser()
-    unread_message_ids: List[Dict] = service.get_unread_messages().get("messages")
-    if not unread_message_ids:
-        return
     current_count = 0
     max_count_before_sleep = 25
-    for m_id in unread_message_ids:
-        current_count += 1
-        #rate limit requests
-        if current_count > max_count_before_sleep:
-            current_count = 0
-            sleep(0.25)
-        #store message id so these messages can be marked as read later
-        service.messages_read.append(m_id)
-        g_parser.parse(service.get_message(m_id["id"]))
+    unread_threads = service.get_threads()
+    for thread_info in unread_threads:
+        thread = service.get_thread(thread_info["id"])
+        messages = thread.get("messages")
+        if not messages:
+            continue
+        earliest_message_index = service.find_earliest_message_index(messages)
+        # set the earliest message as the first message in the list
+        # so the message_thread_initiator field will be set correctly
+        if earliest_message_index != len(messages):
+            earliest_message = messages[earliest_message_index]
+            first_message = messages[0]
+            temp = earliest_message
+            earliest_message = first_message
+            first_message = temp
 
-        job = Job.objects.get_or_unknown(g_parser.job_name)
-        message_thread = MessageThread.objects.create_or_get(
-            g_parser.thread_id,
-            job_id=job,
-            subject=g_parser.subject,
-            message_thread_initiator=g_parser.fromm
-        )
-        Message.objects.create_or_get(
-            g_parser.message_id,
-            message_thread_id=message_thread,
-            subject=g_parser.subject,
-            body=g_parser.body,
-            debug_unparsed_body=g_parser.debug_unparsed_body,
-            fromm=g_parser.fromm,
-            to=g_parser.to,
-            #time_received=datetime.strptime(headers["Date"], "%a %d %b %Y %X %z")
-            time_received=parse(g_parser.date)
-        )
+        for m_id in messages:
+            current_count += 1
+            #rate limit requests
+            if current_count > max_count_before_sleep:
+                current_count = 0
+                sleep(0.25)
+            #store message id so these messages can be marked as read later
+            service.messages_read.append(m_id)
+            g_parser.parse(service.get_message(m_id["id"]))
+
+            job = Job.objects.get_or_unknown(g_parser.job_name)
+            message_thread = MessageThread.objects.create_or_get(
+                g_parser.thread_id,
+                job_id=job,
+                thread_type=g_parser.thread_type,
+                subject=g_parser.subject,
+                message_thread_initiator=g_parser.fromm
+            )
+            Message.objects.create_or_get(
+                g_parser.message_id,
+                message_thread_id=message_thread,
+                subject=g_parser.subject,
+                body=g_parser.body,
+                debug_unparsed_body=g_parser.debug_unparsed_body,
+                fromm=g_parser.fromm,
+                to=g_parser.to,
+                time_received=parse(g_parser.date)
+            )
     #TODO uncomment
     #service.mark_read_messages()
 
@@ -123,3 +149,14 @@ def get_test_message(message_id):
     parser = GmailParser()
     parser.parse(service.get_message(message_id))
     print(parser._chosen)
+    print(f"thread_type: {parser.thread_type}")
+
+def get_test_thread(thread_id):
+    service = GmailService()
+    # parser = GmailParser()
+    # parser.parse(service.get_message(message_id))
+    # print(parser._chosen)
+    # print(f"thread_type: {parser.thread_type}")
+    thread = service.get_thread(thread_id)
+    print(service.find_earliest_message_index(thread))
+    print(service.get_threads())

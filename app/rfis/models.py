@@ -64,7 +64,7 @@ class MessageThread(models.Model):
     )
 
     #if the person who started the thread is a Thomas Builders employee we can send them notifications
-    message_thread_initiator = models.EmailField()
+    message_thread_initiator = models.CharField(max_length=200) 
 
     objects = MessageThreadManager()
 

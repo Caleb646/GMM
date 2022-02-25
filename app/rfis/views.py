@@ -12,7 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from .gmail_service import add_unread_messages, get_test_message
+from .gmail_service import add_unread_messages, get_test_message, get_test_thread
 from .models import MessageThread, Message
 from . import constants as c
 
@@ -26,7 +26,8 @@ class MyView(View):
 
     def post(self, request, *args, **kwargs):
         add_unread_messages()
-        #get_test_message('17f2d45406e51d68')
+        #get_test_message('17f31c86e6cd4208')
+        #get_test_thread('17f31c86e6cd4208')
         return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL, "msg" : "Successfully post"})
 
 ###################################################################
