@@ -42,12 +42,13 @@ class MessageThread(models.Model):
 
     subject = models.CharField(max_length=400)
     class ThreadTypes(models.TextChoices):
+        UNKNOWN = "Unknown"
         RFI = "RFI"
 
     thread_type = models.CharField(
         max_length=10,
         choices=ThreadTypes.choices,
-        default=ThreadTypes.RFI,
+        default=ThreadTypes.UNKNOWN,
     )
 
     due_date = models.DateTimeField()
@@ -83,9 +84,9 @@ class Message(models.Model):
     subject = models.CharField(max_length=400)
     body = models.TextField(default="")
     debug_unparsed_body = models.TextField(default="")
-    fromm = models.EmailField()
-    to = models.CharField(max_length=100)
-    time_received = models.DateTimeField(default=timezone.now)
+    fromm = models.CharField(max_length=100)
+    to = models.CharField(max_length=200)
+    time_received = models.DateTimeField()
 
     objects = MessageManager()
 

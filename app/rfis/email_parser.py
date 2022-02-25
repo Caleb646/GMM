@@ -178,16 +178,12 @@ class Fragment(object):
 ################################################################ 
 #                       END of zapier code
 ################################################################
-
-#TODO move all parsing into here
 class SubjectLineParser:
-    RE_FW_PATTERN = re.compile(r'(RE|FW|FWD|Fw|:)')
+    RE_FW_PATTERN = re.compile(r'^(RE|Re|FW|FWD|Fw|):?\s')
     THREAD_TYPE_CHOICES = MessageThread.ThreadTypes.choices
-    #wont work on a clean restart of the database. Models have to be
-    #created first with this commented out
-    JOB_NAMES = [j.name for j in Job.objects.all()]
     
     def __init__(self) -> None:
+        self.JOB_NAMES = [j.name for j in Job.objects.all()]
         self._chosen = {}
         self._best_subject_line_match = {}
         self._min_score_allowed = 50
@@ -210,8 +206,8 @@ class SubjectLineParser:
 
     def _choose_thread_type(self):
         strings = self._subject_line.split(" ")
-        choice = None
-        subject_line_match = None
+        choice = ""
+        subject_line_match = ""
         high_score = 0
         for c, _ in self.THREAD_TYPE_CHOICES:
             ans = process.extractOne(c, strings)
@@ -227,12 +223,12 @@ class SubjectLineParser:
 
     def _choose_job_name(self):
         highest_score = 0
-        best_choice = None
-        best_subject_line_match = None
-        string = re.sub(self._best_subject_line_match['threadType'], "", self._subject_line).strip()
+        best_choice = ""
+        best_subject_line_match = ""
+        string = re.sub(self._best_subject_line_match.get('threadType', ""), "", self._subject_line).strip()
         for j in self.JOB_NAMES:
             prev_score = 0
-            prev_subject_line_match = None
+            prev_subject_line_match = ""
 
             current_score = fuzz.ratio(j, string)   
             current_subject_line_match = string

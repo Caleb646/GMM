@@ -1,6 +1,5 @@
+from multiprocessing.sharedctypes import Value
 import os.path
-from datetime import datetime
-from django.utils import timezone
 from time import sleep
 from dateparser import parse
 from functools import wraps
@@ -16,34 +15,18 @@ from googleapiclient.errors import HttpError
 
 from .models import Job, MessageThread, Message, Attachment
 from .email_parser import GmailParser
-
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
-
+from . import constants as c
 
 def token_refresh(method):
     @wraps(method)
     def refresh(self: "GmailService", *args, **kwargs):
-        if not self.token or not self.token.valid:
-            if self.token and self.token.expired and self.token.refresh_token:
-                try:
-                    self.token.refresh(Request())
-                except Exception as e:
-                    print(f"Failed to refresh token: {method.__func__} {e}")
-            else:
-                print("Cannot renew token without a refresh token")
+        # check if token is valid before making a request
+        # if not try to refresh it
+        if not self.token or not self.token.valid or self.token.expired and self.token.refresh_token:
+            self._refresh_token()
         return method(self, *args, **kwargs)
     return refresh
 
-#TODO need a logger that will email me
-def error_handler(method):
-    @wraps(method)
-    def handler(self: "GmailService", *args, **kwargs):
-        try:
-            return method(self, args, kwargs)
-        except Exception as e:
-            print(f"Method encountered a fatal error: {e}")
-            return None
-    return handler
 
 #TODO need to deal with spam mail somehow. Maybe only accept messages from pre-approved users
 class GmailService():
@@ -57,49 +40,45 @@ class GmailService():
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists('token.json'):
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-        # If there are no (valid) credentials available, let the user log in.
+        if os.path.exists(c.GMAIL_API_CREDENTIALS_FILENAME):
+            creds = Credentials.from_authorized_user_file(c.GMAIL_API_CREDENTIALS_FILENAME, c.GMAIL_API_SCOPES)
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(settings.GMAIL_SECRETS, SCOPES)
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open('token.json', 'w') as token:
-                token.write(creds.to_json())
+                raise ValueError("Credentials cannot be null or expired")
         self.token = creds
+        self._save_token() # write token to file for later use
         return creds
 
-    #TODO need a way to refresh token on fail
-    #use a decorator
-    #@error_handler
+    def _refresh_token(self):
+        self.token.refresh(Request())
+        self._save_token()
+    
+    def _save_token(self):
+        with open(c.GMAIL_API_CREDENTIALS_FILENAME, 'w') as f:
+            f.write(self.token.to_json())
+
     def build_service(self, *args, **kwargs):
         return build('gmail', 'v1', credentials=self.get_credentials())
 
-    #@error_handler
     @token_refresh
     def get_threads(self, *args, **kwargs):
         return self.service.users().threads().list(userId='me', q="label:inbox").execute().get('threads', [])
 
-    #@error_handler
     @token_refresh
     def get_unread_messages(self, *args, **kwargs):
         return self.service.users().messages().list(userId='me', q="label:inbox is:unread").execute()
 
-    #@error_handler
     @token_refresh
     def get_message(self, message_id, *args, **kwargs):
         return self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
 
-    #@error_handler
     @token_refresh
     def mark_read_messages(self):
         body = {'ids' : [msg["id"] for msg in self.messages_read], 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
         self.service.users().messages().batchModify(userId='me', body=body).execute()
 
-#TODO middle reply was lost for some reason out of the three replies
 def add_unread_messages():
     service = GmailService()
     g_parser = GmailParser()
@@ -136,6 +115,7 @@ def add_unread_messages():
             #time_received=datetime.strptime(headers["Date"], "%a %d %b %Y %X %z")
             time_received=parse(g_parser.date)
         )
+    #TODO uncomment
     #service.mark_read_messages()
 
 def get_test_message(message_id):

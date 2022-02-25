@@ -4,7 +4,7 @@ from django.contrib.auth.models import  Group, Permission
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
-from datetime import datetime
+from django.utils import timezone
 from ...models import Job
 
 MyUser = get_user_model()
@@ -16,8 +16,8 @@ USERS = {
 }
 
 JOBS = [
-    {"name" : settings.DEFAULT_JOB_NAME, "start_date" : datetime.utcnow()},
-    {"name" : "TestJob", "start_date" : datetime.utcnow()}
+    {"name" : settings.DEFAULT_JOB_NAME, "start_date" : timezone.now()},
+    {"name" : "TestJob", "start_date" : timezone.now()}
 ]
 
 
