@@ -1,5 +1,6 @@
 import math
 import os
+import json
 from time import sleep
 from dateparser import parse
 from functools import wraps
@@ -60,7 +61,7 @@ class GmailService():
 
     def build_service(self, *args, **kwargs):
         return build('gmail', 'v1', credentials=self.get_credentials())
-
+    #TODO move into a thread parser
     def find_earliest_message_index(self, messages: List[Dict]):
         earliest_message_index = 0
         earliest_message_time = math.inf
@@ -92,6 +93,25 @@ class GmailService():
         body = {'ids' : [msg["id"] for msg in self.messages_read], 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
         self.service.users().messages().batchModify(userId='me', body=body).execute()
 
+
+def create_test_data(raw_gmail_message, parsed_message, filename):
+
+    data = {
+        "raw_gmail_message": raw_gmail_message,
+        "parsed_message": parsed_message
+    }
+
+    with open(filename,'r+') as file:
+          # First we load existing data into a dict.
+        file_data = json.load(file)
+        # Join new_data with file_data inside emp_details
+        file_data["test_messages"].append(data)
+        # Sets file's current position at offset.
+        file.seek(0)
+        # convert back to json.
+        json.dump(file_data, file, indent = 4)
+
+
 def add_unread_messages():
     service = GmailService()
     g_parser = GmailParser()
@@ -113,15 +133,24 @@ def add_unread_messages():
             earliest_message = first_message
             first_message = temp
 
-        for m_id in messages:
+        for msg in messages:
             current_count += 1
             #rate limit requests
             if current_count > max_count_before_sleep:
                 current_count = 0
                 sleep(0.25)
-            #store message id so these messages can be marked as read later
-            service.messages_read.append(m_id)
-            g_parser.parse(service.get_message(m_id["id"]))
+
+            #print(f"\n\nraw gmail msg:\t {msg}\n\n")
+            g_parser.parse(msg)
+            # store message id so these messages can be marked as read later
+            service.messages_read.append(g_parser.message_id)
+            
+            #print(f"\nmessage data: {g_parser.format_test_data('')}\n")
+
+            if not Message.objects.filter(message_id=g_parser.message_id).exists():
+                # TODO keep commented out unless getting test data
+                create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
+
 
             job = Job.objects.get_or_unknown(g_parser.job_name)
             message_thread = MessageThread.objects.create_or_get(
@@ -147,9 +176,10 @@ def add_unread_messages():
 def get_test_message(message_id):
     service = GmailService()
     parser = GmailParser()
-    parser.parse(service.get_message(message_id))
-    print(parser._chosen)
-    print(f"thread_type: {parser.thread_type}")
+    raw_message = service.get_message(message_id)
+    parser.parse(raw_message)
+    #print("\n\nraw message: ", raw_message, "\n\n")
+    print("\n\nchosen: ", parser.body, "\n\n")
 
 def get_test_thread(thread_id):
     service = GmailService()
@@ -158,5 +188,5 @@ def get_test_thread(thread_id):
     # print(parser._chosen)
     # print(f"thread_type: {parser.thread_type}")
     thread = service.get_thread(thread_id)
-    print(service.find_earliest_message_index(thread))
-    print(service.get_threads())
+    print(thread)
+    #print(service.get_threads())
