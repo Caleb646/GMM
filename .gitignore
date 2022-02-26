@@ -1,4 +1,6 @@
 gmail_creds.json
+gmail_web_client_secret.json
+gmail_web_credentials.json
 token.json
 **env**
 .env*

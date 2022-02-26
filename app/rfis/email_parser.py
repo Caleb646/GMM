@@ -280,6 +280,9 @@ class SubjectLineParser(BaseParser):
         current_string = cleaned_subject_line
         scores = []
         count = 0
+        # TODO could use binary sort to make more efficient
+        # TODO should save the match so it can be sub out of the string later
+        # to make other items easier to get out.
         while count < len(cleaned_subject_line):
             current_string = current_string[:-1]
             scores.append(fuzz.ratio(best_match, current_string))
@@ -288,34 +291,6 @@ class SubjectLineParser(BaseParser):
             self._chosen['jobName'] = cleaned_jobnames_w_actual_jobnames[best_match]
         else:
             self._chosen['jobName'] = 'Unknown'
-
-
-
-        # for j in self.JOB_NAMES:
-        #     prev_score = 0
-        #     prev_subject_line_match = ""
-
-        #     current_score = fuzz.ratio(j, string)   
-        #     current_subject_line_match = string
-
-        #     count = len(string)
-        #     while current_score > prev_score and count >= 0:
-        #         prev_score = current_score
-        #         prev_subject_line_match = current_subject_line_match
-
-        #         current_subject_line_match = current_subject_line_match[:-1] #remove last character
-        #         current_score = fuzz.ratio(j, current_subject_line_match)
-
-        #         count -= 1
-        #     if prev_score > highest_score:
-        #         highest_score = prev_score
-        #         best_choice = j
-        #         best_subject_line_match = prev_subject_line_match
-        # if highest_score <= self._min_score_allowed:
-        #     self._chosen['jobName'] = 'Unknown'
-        # else:
-        #     self._chosen['jobName'] = best_choice
-        # self._best_subject_line_match['jobName'] = best_subject_line_match
 
     @property
     def parsed_subject_line(self):
@@ -353,16 +328,13 @@ class HtmlParser(BaseBodyParser):
             return text[: match.span()[0]]
         return text
 
-    def _parse_parts(self, parts, *args, **kwargs):   
+    def _parse_parts(self, parts):   
         if not parts:
             return
         for p in parts:
-            filename = p.get("filename")
             mimeType = p.get("mimeType")
             body = p.get("body")
             data = body.get("data")
-            file_size = body.get("size")
-            p_headers = p.get("headers")
             if p.get("parts"):
                 self._parse_parts(p.get("parts"))
 
@@ -387,6 +359,41 @@ class PlainTextParser(BaseBodyParser):
         if not parts:
             return
         for p in parts:
+            mimeType = p.get("mimeType")
+            body = p.get("body")
+            data = body.get("data")
+            if p.get("parts"):
+                self._parse_parts(p.get("parts"))
+
+            if mimeType == "text/plain" and data:            
+                self._chosen['body'].append(self._parse_body(data))
+
+
+class MultiPartParser(BaseBodyParser):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._prefer_html = kwargs.get("prefer_html", True)
+        self._are_attachments = kwargs.get("are_attachments", False)
+        self._html_parser = HtmlParser()
+        self._text_parser = PlainTextParser()
+
+    def parse(self, payload):
+        self._clear()
+        self._chosen["body"] = []
+        self._chosen["debug_unparsed_body"] = []
+        self._chosen["files_info"] = []
+        self._html_parser.parse(payload) 
+        self._text_parser.parse(payload)
+        message_parts = payload.get("parts")
+        assert message_parts
+        self._parse_attachments(message_parts)
+        self._is_parsed = True
+
+    def _parse_attachments(self, parts):
+        if not parts:
+            return
+        for p in parts:
             filename = p.get("filename")
             mimeType = p.get("mimeType")
             body = p.get("body")
@@ -394,10 +401,33 @@ class PlainTextParser(BaseBodyParser):
             file_size = body.get("size")
             p_headers = p.get("headers")
             if p.get("parts"):
-                self._parse_parts(p.get("parts"))
+                self._parse_attachments(p.get("parts"))
 
-            if mimeType == "text/plain" and data:            
-                self._chosen['body'].append(self._parse_body(data))
+    @property
+    def body(self):
+        assert self._is_parsed
+        if self._prefer_html and len(self._html_parser.body) > 0:
+            return self._html_parser.body
+        elif len(self._text_parser.body) > 0:
+            return self._text_parser.body
+        else:
+            return self._text_parser.body + self._html_parser.body
+
+    @property
+    def debug_unparsed_body(self):
+        assert self._is_parsed
+        if self._prefer_html and len(self._html_parser.debug_unparsed_body) > 0:
+            return self._html_parser.debug_unparsed_body
+        elif len(self._text_parser.debug_unparsed_body) > 0:
+            return self._text_parser.debug_unparsed_body
+        else:
+            return self._text_parser.debug_unparsed_body + self._html_parser.debug_unparsed_body
+
+    @property
+    def files_info(self):
+        assert self._is_parsed
+        return self._chosen["files_info"]
+
 
 
 
@@ -407,14 +437,14 @@ class GmailParser(BaseParser):
         "iPhone Mail": {
             "text/plain": PlainTextParser(),
             "text/html": HtmlParser(),        
-            "multipart/alternative": HtmlParser(parts=True),
-            "multipart/mixed": HtmlParser(),
+            "multipart/alternative": MultiPartParser(),
+            "multipart/mixed": MultiPartParser(are_attachments=True),
             },
         "default":{
             "text/plain": PlainTextParser(),
             "text/html": HtmlParser(),        
-            "multipart/alternative": HtmlParser(parts=True),
-            "multipart/mixed": HtmlParser(), 
+            "multipart/alternative": MultiPartParser(),
+            "multipart/mixed": MultiPartParser(are_attachments=True), 
             }
     }
     def __init__(self) -> None:
@@ -523,6 +553,13 @@ class GmailParser(BaseParser):
     def debug_unparsed_body(self):
         assert self._is_parsed
         return "".join(self._body_parser.debug_unparsed_body)
+
+    @property
+    def files_info(self):
+        assert self._is_parsed
+        if isinstance(self._body_parser, MultiPartParser):
+            return self._chosen["files_info"]
+        return []
 
     @property
     def headers(self):

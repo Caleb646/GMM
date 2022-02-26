@@ -145,11 +145,11 @@ def add_unread_messages():
             # store message id so these messages can be marked as read later
             service.messages_read.append(g_parser.message_id)
             
-            #print(f"\nmessage data: {g_parser.format_test_data('')}\n")
+            print(f"\nmessage data: {g_parser.format_test_data('')}\n")
 
-            if not Message.objects.filter(message_id=g_parser.message_id).exists():
+            #if not Message.objects.filter(message_id=g_parser.message_id).exists():
                 # TODO keep commented out unless getting test data
-                create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
+                #create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
 
 
             job = Job.objects.get_or_unknown(g_parser.job_name)

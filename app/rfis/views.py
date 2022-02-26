@@ -26,8 +26,8 @@ class MyView(View):
 
     def post(self, request, *args, **kwargs):
         add_unread_messages()
-        #get_test_message('17f37268971607b6')
-        #get_test_thread('17f37268971607b6')
+        #get_test_message('17f380278f9e8724')
+        #get_test_thread('17f3801f072e1629')
         return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL, "msg" : "Successfully post"})
 
 ###################################################################
