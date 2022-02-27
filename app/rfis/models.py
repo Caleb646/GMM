@@ -24,10 +24,10 @@ class Dashboard(models.Model):
     slug = models.SlugField(unique=True)
     owner = models.CharField(max_length=200)
 
-    def save(self, force_insert: bool = ..., force_update: bool = ..., using: Optional[str] = ..., update_fields: Optional[Iterable[str]] = ...) -> None:
+    def save(self, *args, **kwargs) -> None:
         if not self.slug:
             self.slug = str(uuid.uuid4())
-        return super().save(force_insert, force_update, using, update_fields)
+        return super().save(*args, **kwargs)
 
 class Job(models.Model):
     name = models.CharField(max_length=100)
@@ -75,7 +75,9 @@ class MessageThread(models.Model):
     )
 
     #if the person who started the thread is a Thomas Builders employee we can send them notifications
-    message_thread_initiator = models.CharField(max_length=200) 
+    message_thread_initiator = models.CharField(max_length=200)
+
+    accepted_answer = models.TextField(default="Has not been answered!") 
 
     objects = MessageThreadManager()
 

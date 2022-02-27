@@ -90,88 +90,11 @@ class GmailService():
 
     @token_refresh
     def mark_read_messages(self):
-        body = {'ids' : [msg["id"] for msg in self.messages_read], 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
+        if len(self.messages_read) == 0:
+            return
+        body = {'ids' : self.messages_read, 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
         self.service.users().messages().batchModify(userId='me', body=body).execute()
 
-
-def create_test_data(raw_gmail_message, parsed_message, filename):
-
-    data = {
-        "raw_gmail_message": raw_gmail_message,
-        "parsed_message": parsed_message
-    }
-
-    with open(filename,'r+') as file:
-          # First we load existing data into a dict.
-        file_data = json.load(file)
-        # Join new_data with file_data inside emp_details
-        file_data["test_messages"].append(data)
-        # Sets file's current position at offset.
-        file.seek(0)
-        # convert back to json.
-        json.dump(file_data, file, indent = 4)
-
-
-def add_unread_messages():
-    service = GmailService()
-    g_parser = GmailParser()
-    current_count = 0
-    max_count_before_sleep = 25
-    unread_threads = service.get_threads()
-    for thread_info in unread_threads:
-        thread = service.get_thread(thread_info["id"])
-        messages = thread.get("messages")
-        if not messages:
-            continue
-        earliest_message_index = service.find_earliest_message_index(messages)
-        # set the earliest message as the first message in the list
-        # so the message_thread_initiator field will be set correctly
-        if earliest_message_index != len(messages):
-            earliest_message = messages[earliest_message_index]
-            first_message = messages[0]
-            temp = earliest_message
-            earliest_message = first_message
-            first_message = temp
-
-        for msg in messages:
-            current_count += 1
-            #rate limit requests
-            if current_count > max_count_before_sleep:
-                current_count = 0
-                sleep(0.25)
-
-            #print(f"\n\nraw gmail msg:\t {msg}\n\n")
-            g_parser.parse(msg)
-            # store message id so these messages can be marked as read later
-            service.messages_read.append(g_parser.message_id)
-            
-            print(f"\nmessage data: {g_parser.format_test_data('')}\n")
-
-            if not Message.objects.filter(message_id=g_parser.message_id).exists():
-                # TODO keep commented out unless getting test data
-                create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
-
-
-            job = Job.objects.get_or_unknown(g_parser.job_name)
-            message_thread = MessageThread.objects.create_or_get(
-                g_parser.thread_id,
-                job_id=job,
-                thread_type=g_parser.thread_type,
-                subject=g_parser.subject,
-                message_thread_initiator=g_parser.fromm
-            )
-            Message.objects.create_or_get(
-                g_parser.message_id,
-                message_thread_id=message_thread,
-                subject=g_parser.subject,
-                body=g_parser.body,
-                debug_unparsed_body=g_parser.debug_unparsed_body,
-                fromm=g_parser.fromm,
-                to=g_parser.to,
-                time_received=parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
-            )
-    #TODO uncomment
-    #service.mark_read_messages()
 
 def get_test_message(message_id):
     service = GmailService()

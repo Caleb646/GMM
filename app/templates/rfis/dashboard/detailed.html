@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{# Removes link to admin site #}
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <p class="lead text-center font-weight-bold">This is your dashboard. From here, you can edit all of your messages that are still open.</p>
+    </div>
+{% endblock %}
+
+
+{% block inherited_content %}
+
+    <form method="post" class="form-inline">
+        {% csrf_token %}
+        {{ formset.non_form_errors.as_ul }}
+        <table id="formset" class="form table table-striped">
+            {% for form in formset.forms %}
+                {% if forloop.first %}
+                <thead class="thead-dark">
+                    <tr>
+                        {% for field in form.visible_fields %}
+                            <th scope="col">
+                                {{ field.label|capfirst }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                {% endif %}
+                <tr class="" scope="row">
+                    {# Has to be included for the formset to be valid when updating the models #}
+                    {{ formset.management_form }}
+                    {% for field in form.visible_fields %}
+                        <td>
+                            {# Include the hidden fields in the form #}
+                            {% if forloop.first %}
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            {% endif %}
+                            {{ field.errors.as_ul }}
+                            {{ field }}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+        <input type="submit" value="Save Changes" />
+    </form>
+{% endblock %}

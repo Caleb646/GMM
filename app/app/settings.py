@@ -22,21 +22,28 @@ DEBUG = bool(int(os.getenv("DEBUG", default="0")))
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 DOMAIN_URL = os.getenv("DOMAIN_URL")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+# the cron user should be a normal user not a superuser
+CRON_USER_NAME=os.getenv("CRON_USER_NAME") 
+CRON_USER_PASSWORD=os.getenv("CRON_USER_PASSWORD")
 
 #TODO move these to the constants file
 DEFAULT_JOB_NAME = "Unknown"
 DEFAULT_THREAD_TYPE = "Unknown"
 
 INSTALLED_APPS = [
-    'rfis',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',  
+    'django.contrib.staticfiles', 
 
+    # my apps
+    'rfis', 
+
+    # third party apps
     'admin_searchable_dropdown',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -62,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'rfis.context_processors.get_domain_url',
             ],
         },
     },
@@ -150,9 +158,47 @@ LOGGING = {
 
 ########################################################################################
 
+
+
+
+
+####################### Django-Cron Setup ###############################################
+
+# use python manage.py crontab add to update CRONJOBS
+# use python manage.py crontab show to show active CRONJOBS
+# use python manage.py crontab remove to remove all active CRONJOBS
+# CRONJOBS = [
+#     ('0 0 1 * *', 'myapp.cron.other_cron_job', ['pos_arg1', 'pos_arg2'], {'verbose': 'key_arg'}),
+# ]
+
+########################################################################################
+
+
+
+
+
 ####################### My Auth Settings ###############################################
 AUTH_USER_MODEL = 'rfis.MyUser'
 ########################################################################################
+
+
+
+
+
+
+####################### Email Setup ###############################################
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USERNAME')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+########################################################################################
+
+
+
+
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'EST'

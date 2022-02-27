@@ -13,6 +13,9 @@ USERS = {
     MyUser.objects.create_superuser : [
             [{'email' : 'calebthomas646@yahoo.com', 'password' : settings.ADMIN_PASSWORD}, (None, None)],
         ],
+    MyUser.objects.create_user : [
+            [{'email' : settings.CRON_USER_NAME, 'password' : settings.CRON_USER_PASSWORD, "is_active": True}, (None, None)],
+        ],
 }
 
 JOBS = [

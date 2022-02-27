@@ -8,14 +8,16 @@ from admin_searchable_dropdown.filters import AutocompleteFilter
 
 from .views import MessageThreadDetailedView
 from .forms import MyUserCreateForm, MyUserChangeForm
-from .models import MyUser, Job, MessageThread, Message, Attachment
+from .models import MyUser, Job, MessageThread, Message, Attachment, Dashboard
+
+from . import forms as f, models as m, views as v
 
 
 class MyUserAdmin(UserAdmin):
 
-    add_form = MyUserCreateForm
-    form = MyUserChangeForm
-    model = MyUser
+    add_form = f.MyUserCreateForm
+    form = f.MyUserChangeForm
+    model = m.MyUser
     list_display = ('email', 'is_staff', 'is_active',)
     list_filter = ('is_staff', 'is_active',)
     fieldsets = (
@@ -31,6 +33,19 @@ class MyUserAdmin(UserAdmin):
     )
     search_fields = ('email',)
     ordering = ('email',)
+
+
+class DashboardAdmin(admin.ModelAdmin):
+    search_fields = ['owner__startswith']
+    list_display = ('owner', 'slug', 'detailed_view_button')
+    add_form = f.DashboardCreateForm
+    form = f.DashboardChangeForm
+
+    def detailed_view_button(self, object: m.Dashboard):
+        return format_html(
+            f"<a href={reverse('dashboard_detailed', args=[object.slug])}>View</a>", 
+        )
+
 
 class JobAdmin(admin.ModelAdmin):
     search_fields = ['name']
@@ -52,14 +67,17 @@ class MessageThreadAdmin(admin.ModelAdmin):
     list_display = (
             'job_id', 
             'message_thread_initiator', 
-            'subject', 
+            'subject',
+            "accepted_answer",
             'thread_status',
             'thread_type', 
             'due_date',
             'detailed_view_button'
         )
 
-    def detailed_view_button(self, object):
+    change_list_template = "admin/message_thread/change_list.html"
+
+    def detailed_view_button(self, object: m.MessageThread):
         return format_html(
             f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
         )
@@ -68,7 +86,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         # custom_urls have to be at the top of the list or django wont match them
         custom_urls = [
-            path('<int:pk>/detailed/', MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+            path('<int:pk>/detailed/', v.MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
         ]
         return custom_urls + urls
 
@@ -84,11 +102,12 @@ class MessageAdmin(admin.ModelAdmin):
 
 admin.site.site_header = "Dashboard"
 admin.site.site_title = "Dashboard"
-admin.site.register(MyUser, MyUserAdmin)
-admin.site.register(Job, JobAdmin)
-admin.site.register(MessageThread, MessageThreadAdmin)
-admin.site.register(Message, MessageAdmin)
-admin.site.register(Attachment)
+admin.site.register(m.MyUser, MyUserAdmin)
+admin.site.register(m.Dashboard, DashboardAdmin)
+admin.site.register(m.Job, JobAdmin)
+admin.site.register(m.MessageThread, MessageThreadAdmin)
+admin.site.register(m.Message, MessageAdmin)
+admin.site.register(m.Attachment)
 
 # admin_site = MyAdminSite()
 # admin_site.site_header = "Dashboard"
