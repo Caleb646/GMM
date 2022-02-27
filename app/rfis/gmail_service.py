@@ -147,9 +147,9 @@ def add_unread_messages():
             
             print(f"\nmessage data: {g_parser.format_test_data('')}\n")
 
-            #if not Message.objects.filter(message_id=g_parser.message_id).exists():
+            if not Message.objects.filter(message_id=g_parser.message_id).exists():
                 # TODO keep commented out unless getting test data
-                #create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
+                create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
 
 
             job = Job.objects.get_or_unknown(g_parser.job_name)
@@ -168,7 +168,7 @@ def add_unread_messages():
                 debug_unparsed_body=g_parser.debug_unparsed_body,
                 fromm=g_parser.fromm,
                 to=g_parser.to,
-                time_received=parse(g_parser.date)
+                time_received=parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
             )
     #TODO uncomment
     #service.mark_read_messages()
@@ -179,7 +179,7 @@ def get_test_message(message_id):
     raw_message = service.get_message(message_id)
     parser.parse(raw_message)
     #print("\n\nraw message: ", raw_message, "\n\n")
-    print("\n\nchosen: ", parser.body, "\n\n")
+    #print("\n\nchosen: ", parser.body, "\n\n")
 
 def get_test_thread(thread_id):
     service = GmailService()
@@ -188,5 +188,6 @@ def get_test_thread(thread_id):
     # print(parser._chosen)
     # print(f"thread_type: {parser.thread_type}")
     thread = service.get_thread(thread_id)
+    print(f"\n\nGmail Internal Date: {parse(thread['messages'][0]['internalDate'])}")
     print(thread)
     #print(service.get_threads())

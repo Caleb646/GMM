@@ -240,6 +240,7 @@ class SubjectLineParser(BaseParser):
 
     def parse(self, subject_line):
         self._clear()
+        # have to clean the subject line first before anything else
         self._clean_subject_line(subject_line)
         self._choose_thread_type()
         self._choose_job_name()
@@ -253,44 +254,22 @@ class SubjectLineParser(BaseParser):
         self._subject_line = re.sub(self.RE_FW_PATTERN, "", subject_line).strip()
 
     def _choose_thread_type(self):
-        strings = self._subject_line.split(" ")
-        choice = ""
-        subject_line_match = ""
-        high_score = 0
-        for c, _ in self.THREAD_TYPE_CHOICES:
-            ans = process.extractOne(c, strings)
-            if ans[1] > high_score:
-                high_score = ans[1]
-                choice = c
-                subject_line_match = ans[0]
-        if high_score <= self._min_score_allowed:
-            self._chosen['threadType'] = 'Unknown'
+        best_match, best_choice, score = u.get_best_match([c for c, _ in self.THREAD_TYPE_CHOICES], self._subject_line.split(" "), lambda x : x.strip().lower())
+        if score > self._min_score_allowed:
+            self._chosen["threadType"] = best_match
         else:
-            self._chosen['threadType'] = choice
-        self._best_subject_line_match['threadType'] = subject_line_match
+            self._chosen["threadType"] = "Unknown"   
 
     def _choose_job_name(self):
-        highest_score = 0
-        best_choice = ""
-        best_subject_line_match = ""
-        cleaned_subject_line = re.sub(self._best_subject_line_match.get('threadType', ""), "", self._subject_line).lower().replace(" ", "")
-
-        cleaned_jobnames_w_actual_jobnames = {j.lower().replace(" ", "") : j for j in self.JOB_NAMES}
-        best_match = u.get_best_match(cleaned_jobnames_w_actual_jobnames.keys(), cleaned_subject_line, 0)
-        current_string = cleaned_subject_line
-        scores = []
-        count = 0
         # TODO could use binary sort to make more efficient
-        # TODO should save the match so it can be sub out of the string later
-        # to make other items easier to get out.
-        while count < len(cleaned_subject_line):
-            current_string = current_string[:-1]
-            scores.append(fuzz.ratio(best_match, current_string))
-            count += 1
-        if max(scores) > self._min_score_allowed:
-            self._chosen['jobName'] = cleaned_jobnames_w_actual_jobnames[best_match]
+        best_match, best_choice, score = u.get_best_match(self.JOB_NAMES, [self._subject_line], lambda x : x.lower().replace(" ", ""))
+        unmodified_match, score = u.get_highest_possible_match(best_match, self._subject_line, lambda x : x.lower().replace(" ", ""))
+        if score > self._min_score_allowed:
+            self._chosen['jobName'] = unmodified_match
         else:
             self._chosen['jobName'] = 'Unknown'
+
+        #print(f"\n\nsubject chosen: {self._chosen}")    
 
     @property
     def parsed_subject_line(self):
@@ -451,13 +430,19 @@ class GmailParser(BaseParser):
         super().__init__()
         self._subject_parser = SubjectLineParser()
 
-
     def parse(self, gmail_message):
         self._clear()
         if not gmail_message:
             return
         self._chosen["message_id"] = gmail_message["id"]
         self._chosen["thread_id"] = gmail_message["threadId"]
+        self._chosen['headers'] = {
+            "Subject": "Unknown",
+            "From": "Unknown",
+            "To": "Unknown",
+            "Date": gmail_message["internalDate"], # internalDate is more accurate than Date header
+            "x_mailer": "Unknown"
+        }
         payload = gmail_message.get("payload")
         #print("\npayload: ", payload, "\n")
         assert payload, "Payload cannot be None"
@@ -492,19 +477,13 @@ class GmailParser(BaseParser):
         xmail_header = self._chosen['headers']["x_mailer"]
         mime_type = self._chosen["mime_type"]
         if not xmail_header:
-            return self.BODY_PARSERS_XMAILER["default"].get(mime_type, HtmlParser(parts=True))
-        chosen_xmailer = self._chosen['headers']["x_mailer"] = u.get_best_match(self.BODY_PARSERS_XMAILER.keys(), xmail_header)
+            return self.BODY_PARSERS_XMAILER["default"].get(mime_type, MultiPartParser())
+        query, match, score = u.get_best_match(list(self.BODY_PARSERS_XMAILER.keys()), [xmail_header], lambda x : x.lower().replace(" ", ""))
+        chosen_xmailer = self._chosen['headers']["x_mailer"] = query if score > 60 else "Unknown"
         chosen_xmailer_parser: Dict[str : BaseBodyParser] = self.BODY_PARSERS_XMAILER.get(chosen_xmailer, self.BODY_PARSERS_XMAILER["default"])
-        return chosen_xmailer_parser.get(mime_type, HtmlParser(parts=True))
+        return chosen_xmailer_parser.get(mime_type,  MultiPartParser())
 
     def _parse_headers(self, headers, *args, **kwargs):
-        self._chosen['headers'] = {
-            "Subject": "Unknown",
-            "From": "Unknown",
-            "To": "Unknown",
-            "Date": f"{timezone.now()}",
-            "x_mailer": "Unknown"
-        }
         if not headers:
             return 
         for h in headers:
@@ -518,8 +497,6 @@ class GmailParser(BaseParser):
                 self._chosen['headers']["To"] = " ".join(self._parse_email_address(value))
             elif head == "Cc":
                 self._chosen['headers']["Cc"] = " ".join(self._parse_email_address(value))
-            elif head == "Date":
-                self._chosen['headers']["Date"] = value
             elif head == "X-Mailer":
                 self._chosen['headers']["x_mailer"] = value
 

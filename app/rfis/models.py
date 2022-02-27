@@ -1,7 +1,9 @@
 import datetime
+from typing import Iterable, Optional
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+import uuid
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
 
@@ -17,6 +19,15 @@ class MyUser(AbstractUser):
     def __str__(self):
         return self.email
 
+
+class Dashboard(models.Model):
+    slug = models.SlugField(unique=True)
+    owner = models.CharField(max_length=200)
+
+    def save(self, force_insert: bool = ..., force_update: bool = ..., using: Optional[str] = ..., update_fields: Optional[Iterable[str]] = ...) -> None:
+        if not self.slug:
+            self.slug = str(uuid.uuid4())
+        return super().save(force_insert, force_update, using, update_fields)
 
 class Job(models.Model):
     name = models.CharField(max_length=100)

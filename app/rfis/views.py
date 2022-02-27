@@ -26,8 +26,20 @@ class MyView(View):
 
     def post(self, request, *args, **kwargs):
         add_unread_messages()
-        #get_test_message('17f380278f9e8724')
-        #get_test_thread('17f3801f072e1629')
+        #get_test_message('17f38de3a9f9139f')
+        #get_test_thread('17f38eacd4004527')
+        return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL, "msg" : "Successfully post"})
+
+
+class DashBoardView(View):
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL})
+
+    def post(self, request, *args, **kwargs):
+        add_unread_messages()
+        #get_test_message('17f38de3a9f9139f')
+        #get_test_thread('17f38eacd4004527')
         return render(request, self.template_name, {"domain_url" : settings.DOMAIN_URL, "msg" : "Successfully post"})
 
 ###################################################################

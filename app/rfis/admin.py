@@ -68,7 +68,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         # custom_urls have to be at the top of the list or django wont match them
         custom_urls = [
-            path('<int:pk>/detail-view/', MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+            path('<int:pk>/detailed/', MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
         ]
         return custom_urls + urls
 

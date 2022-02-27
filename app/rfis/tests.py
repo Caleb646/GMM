@@ -5,6 +5,7 @@ from . import constants as c, email_parser as eparser, models as m
 
 class EmailParserTestCase(TestCase):
     def setUp(self):
+        self.maxDiff = None
         # any jobs have to be created before the 
         # GmailParser is instantiated
         m.Job.objects.create(name="Test Job")
@@ -27,4 +28,4 @@ class EmailParserTestCase(TestCase):
             tested.pop('To')
 
             #TODO the To Field is failing because the emails are not ordered the same in either dict
-            self.assertDictEqual(tested, answer, f"\n\ntest: {self._parser.format_test_data()}\n\nanswer: {answer}")
+            self.assertDictEqual(tested, answer, f"\n\ntest: {tested}\n\nanswer: {answer}")
