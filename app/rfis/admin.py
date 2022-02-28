@@ -79,7 +79,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
 
     def detailed_view_button(self, object: m.MessageThread):
         return format_html(
-            f"<a href={reverse('message_thread_detailed_view', args=[object.id])}>View</a>", 
+            f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
         )
 
     def get_urls(self):

@@ -6,6 +6,7 @@ from django.utils import timezone
 import uuid
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
+from . import constants as c
 
 class MyUser(AbstractUser):
     username = None
@@ -53,7 +54,7 @@ class MessageThread(models.Model):
 
     subject = models.CharField(max_length=400)
     class ThreadTypes(models.TextChoices):
-        UNKNOWN = "Unknown"
+        UNKNOWN = c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
         RFI = "RFI"
 
     thread_type = models.CharField(
@@ -66,7 +67,7 @@ class MessageThread(models.Model):
     
     class ThreadStatus(models.TextChoices):
         OPEN = "OPEN"
-        CLOSED = "CLOSED"
+        CLOSED = c.FIELD_VALUE_CLOSED_THREAD_STATUS
 
     thread_status = models.CharField(
         max_length=15,
@@ -76,8 +77,8 @@ class MessageThread(models.Model):
 
     #if the person who started the thread is a Thomas Builders employee we can send them notifications
     message_thread_initiator = models.CharField(max_length=200)
-
-    accepted_answer = models.TextField(default="Has not been answered!") 
+    # blank=True has to be set or the field will be required in any model form
+    accepted_answer = models.TextField(default="", blank=True) 
 
     objects = MessageThreadManager()
 

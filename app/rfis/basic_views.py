@@ -18,7 +18,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 
 from .gmail_service import get_test_message, get_test_thread
-from . import constants as c, models as m, utils as u, gmail_service as g_service, email_parser as e_parser
+from . import constants as c, models as m, utils as u, gmail_service as g_service, email_parser as e_parser,\
+    formsets as f_sets
 
 
 class CronJobViews:
@@ -88,14 +89,14 @@ class CronJobViews:
                     time_received=time_message_received
                 )
                 for f_info in g_parser.files_info:
-                    m.Attachment.objects.get_or_create(
+                    attachment, created = m.Attachment.objects.get_or_create(
                         filename=f_info["filename"],
                         gmail_attachment_id=f_info["gmail_attachment_id"],
                         time_received=time_message_received,
                         message_id=message
                     )
         #TODO uncomment
-        service.mark_read_messages()
+        #service.mark_read_messages()
         return HttpResponse("Messages were added successfully", status=200)
    
 
@@ -105,7 +106,7 @@ class CronJobViews:
         all_users = m.MyUser.objects.all()
         messages = []
         for user in all_users:
-            user_dashboard = m.Dashboard.objects.get_or_create(owner=user.email)
+            user_dashboard, created = m.Dashboard.objects.get_or_create(owner=user.email)
             total_open_messages = m.MessageThread.objects.filter(message_thread_initiator=user.email).count()
             ctx = {
                 "open_message_count": total_open_messages, 
@@ -127,7 +128,8 @@ class DashboardView(View):
             return HttpResponse("dasboard doesnt exist.")
 
         ThreadsFormset = modelformset_factory(
-            m.MessageThread, 
+            m.MessageThread,
+            formset=f_sets.MessageThreadFormSet,
             fields=("job_id", "subject", "accepted_answer", "thread_type", "thread_status"),
             widgets = {
                 'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),
@@ -142,9 +144,10 @@ class DashboardView(View):
         return render(request, self.template_name, {"formset" : formset})
 
     #TODO should create a ThreadsFormset class
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):      
         ThreadsFormset = modelformset_factory(
-            m.MessageThread, 
+            m.MessageThread,
+            formset=f_sets.MessageThreadFormSet,
             fields=("job_id", "subject", "accepted_answer", "thread_type", "thread_status"),
             widgets = {
                 'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),

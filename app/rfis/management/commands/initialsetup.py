@@ -6,6 +6,7 @@ from django.conf import settings
 
 from django.utils import timezone
 from ...models import Job
+from ... import constants as c
 
 MyUser = get_user_model()
 
@@ -23,6 +24,18 @@ JOBS = [
     {"name" : "TestJob", "start_date" : timezone.now()}
 ]
 
+GROUPS = {
+
+    c.GROUP_NAME_STAFF_USERS: {
+        # model specific permissions
+        "myuser" : ["add","change","view"],
+        "dashboard" : ["view"],
+        "job" : ["add","delete","change","view"],
+        "messagethread" : ["change","view"],
+        "message": ["view"]
+    },
+}
+
 
 class Command(BaseCommand):
     """
@@ -31,8 +44,21 @@ class Command(BaseCommand):
     help = "Will create all groups, permissions, job, and user needed for testing"
 
     def handle(self, *args, **options):
+        self._create_groups()
         self._create_users()
         self._create_jobs()
+
+    def _create_groups(self):
+        """
+        Creates all of the groups and their specific permissions
+        """
+        for group_name in GROUPS:
+            new_group, created = Group.objects.get_or_create(name=group_name)
+            for app_model in GROUPS[group_name]:
+                for permission_name in GROUPS[group_name][app_model]:
+                    name = "Can {} {}".format(permission_name, app_model)
+                    model_add_perm, created = Permission.objects.get_or_create(name=name)
+                    new_group.permissions.add(model_add_perm)
 
     def _create_users(self, *args, **kwargs):
         for user_create_cmd in USERS:
@@ -49,4 +75,4 @@ class Command(BaseCommand):
 
     def _create_jobs(self):
         for j in JOBS:
-            Job.objects.create(**j)
+            job, created = Job.objects.get_or_create(**j)

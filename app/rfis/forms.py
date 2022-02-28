@@ -26,3 +26,7 @@ class DashboardChangeForm(forms.ModelForm):
     class Meta: 
        model = m.Dashboard
        fields = ['owner']
+
+class MessageThreadUpdateForm(forms.Form):
+    job_id = forms.CharField()
+    pub_date = forms.DateField()
