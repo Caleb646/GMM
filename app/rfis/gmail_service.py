@@ -32,7 +32,7 @@ def token_refresh(method):
 class GmailService():
     def __init__(self) -> None:
         self.token: Credentials = None
-        self.service = self.build_service()
+        self.service = self._build_service()
         self.messages_read: List[Dict[str : str]] = []
 
     def get_credentials(self):
@@ -59,9 +59,9 @@ class GmailService():
         with open(c.GMAIL_API_CREDENTIALS_FILENAME, 'w') as f:
             f.write(self.token.to_json())
 
-    def build_service(self, *args, **kwargs):
+    def _build_service(self, *args, **kwargs):
         return build('gmail', 'v1', credentials=self.get_credentials())
-    #TODO move into a thread parser
+
     def find_earliest_message_index(self, messages: List[Dict]):
         earliest_message_index = 0
         earliest_message_time = math.inf
@@ -94,6 +94,10 @@ class GmailService():
             return
         body = {'ids' : self.messages_read, 'addLabelIds': [], 'removeLabelIds': ['UNREAD']}
         self.service.users().messages().batchModify(userId='me', body=body).execute()
+
+    @token_refresh
+    def get_attachment(self, message_id, attachment_id, *args, **kwargs):
+        return self.service.users().messages().attachments().get(userId='me', id=attachment_id, messageId=message_id).execute()
 
 
 def get_test_message(message_id):

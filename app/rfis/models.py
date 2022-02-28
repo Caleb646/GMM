@@ -48,7 +48,7 @@ class Job(models.Model):
 
 
 class MessageThread(models.Model):
-    gmail_thread_id = models.CharField(max_length=100)
+    gmail_thread_id = models.CharField(max_length=200)
     job_id = models.ForeignKey(Job, on_delete=models.CASCADE)
 
     subject = models.CharField(max_length=400)
@@ -92,13 +92,14 @@ class MessageThread(models.Model):
     def __str__(self):
         return self.subject
 class Message(models.Model):
-    message_id = models.CharField(max_length=100)
+    message_id = models.CharField(max_length=200)
     message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)
     subject = models.CharField(max_length=400)
     body = models.TextField(default="")
     debug_unparsed_body = models.TextField(default="")
     fromm = models.CharField(max_length=100)
     to = models.CharField(max_length=200)
+    #TODO add Cc field
     time_received = models.DateTimeField()
 
     objects = MessageManager()
@@ -117,8 +118,29 @@ class Message(models.Model):
 
 class Attachment(models.Model):
     message_id = models.ForeignKey(Message, on_delete=models.CASCADE)
+    gmail_attachment_id = models.CharField(max_length=1000, default="Unknown")
     filename = models.CharField(max_length=100)
-    upload = models.FileField(upload_to="attachments", blank=True)
+    time_received = models.DateTimeField()
+    #upload = models.FileField(upload_to="attachments", blank=True)
+
+    """
+    I want to get the file data from Gmail, decode it, and pass it on to the browser
+    for download without writing it to a file on the server. Use javascript to call a file download endpoint with
+    the gmail attachment id and have that endpoint return this response
+
+    https://docs.djangoproject.com/en/4.0/ref/request-response/#django.http.HttpResponse
+    >>> response = HttpResponse(my_data, headers={
+...     'Content-Type': 'application/vnd.ms-excel',
+...     'Content-Disposition': 'attachment; filename="foo.xls"',
+... })
+    """
+    class Meta:
+        ordering = ["time_received"]
+
+    def save(self, *args, **kwargs):
+        if not self.time_received:
+            self.time_received = timezone.now()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.filename

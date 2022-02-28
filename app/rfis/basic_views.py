@@ -12,6 +12,7 @@ from django import forms
 from django.core.mail import send_mass_mail, send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -75,7 +76,8 @@ class CronJobViews:
                     subject=g_parser.subject,
                     message_thread_initiator=g_parser.fromm
                 )
-                m.Message.objects.create_or_get(
+                time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
+                message = m.Message.objects.create_or_get(
                     g_parser.message_id,
                     message_thread_id=message_thread,
                     subject=g_parser.subject,
@@ -83,8 +85,15 @@ class CronJobViews:
                     debug_unparsed_body=g_parser.debug_unparsed_body,
                     fromm=g_parser.fromm,
                     to=g_parser.to,
-                    time_received=dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
+                    time_received=time_message_received
                 )
+                for f_info in g_parser.files_info:
+                    m.Attachment.objects.get_or_create(
+                        filename=f_info["filename"],
+                        gmail_attachment_id=f_info["gmail_attachment_id"],
+                        time_received=time_message_received,
+                        message_id=message
+                    )
         #TODO uncomment
         service.mark_read_messages()
         return HttpResponse("Messages were added successfully", status=200)
@@ -131,6 +140,7 @@ class DashboardView(View):
             message_thread_initiator=dashboard.owner)
             )
         return render(request, self.template_name, {"formset" : formset})
+
     #TODO should create a ThreadsFormset class
     def post(self, request, *args, **kwargs):
         ThreadsFormset = modelformset_factory(
@@ -151,13 +161,14 @@ class DashboardView(View):
 ###################################################################
 #               Admin Views
 ###################################################################
-class MessageThreadDetailedView(View):
+class MessageThreadDetailedView(LoginRequiredMixin, View):
     template_name = 'admin/message_thread/detailed.html'
 
     def get(self, request, *args, **kwargs):
         message_thread = m.MessageThread.objects.get(pk=kwargs["pk"])
         messages = m.Message.objects.filter(message_thread_id=message_thread)
-        return render(request, self.template_name, {"my_messages" : messages})
+        attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
+        return render(request, self.template_name, {"my_messages" : messages, "my_attachments" : attachments})
 
 
 def load_credentials(filename):
@@ -169,7 +180,7 @@ def save_credentials(credentials: Credentials, filename):
         f.write(credentials.to_json())
 
 
-class GmailAuthorize(View):
+class GmailAuthorize(LoginRequiredMixin, View):
 
     def get(self, request, format=None):
         # If modifying these scopes

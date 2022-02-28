@@ -6,11 +6,11 @@ from django.utils.html import format_html
 
 from admin_searchable_dropdown.filters import AutocompleteFilter
 
-from .views import MessageThreadDetailedView
+from .basic_views import MessageThreadDetailedView
 from .forms import MyUserCreateForm, MyUserChangeForm
 from .models import MyUser, Job, MessageThread, Message, Attachment, Dashboard
 
-from . import forms as f, models as m, views as v
+from . import basic_views as v, forms as f, models as m
 
 
 class MyUserAdmin(UserAdmin):
@@ -79,7 +79,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
 
     def detailed_view_button(self, object: m.MessageThread):
         return format_html(
-            f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
+            f"<a href={reverse('message_thread_detailed_view', args=[object.id])}>View</a>", 
         )
 
     def get_urls(self):
@@ -100,6 +100,14 @@ class MessageAdmin(admin.ModelAdmin):
         )
 
 
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = (
+            'message_id', 
+            'filename', 
+            'time_received',
+        )
+
+
 admin.site.site_header = "Dashboard"
 admin.site.site_title = "Dashboard"
 admin.site.register(m.MyUser, MyUserAdmin)
@@ -107,7 +115,7 @@ admin.site.register(m.Dashboard, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
 admin.site.register(m.MessageThread, MessageThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
-admin.site.register(m.Attachment)
+admin.site.register(m.Attachment, AttachmentAdmin)
 
 # admin_site = MyAdminSite()
 # admin_site.site_header = "Dashboard"

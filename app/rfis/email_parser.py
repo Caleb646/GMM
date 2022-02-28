@@ -294,10 +294,6 @@ class HtmlParser(BaseBodyParser):
 
     def _parse_body(self, data):
         soup = BeautifulSoup(urlsafe_b64decode(data).decode(), "html.parser")
-        #TODO save html to a file
-        # https://docs.djangoproject.com/en/4.0/topics/files/
-        # with open("output.html", "w") as f:
-        #     f.write(str(soup.prettify()))
         self._chosen["debug_unparsed_body"].append(str(soup.prettify())) # store all of the text before the regex is applied for debugging
         text = EmailReplyParser.parse_reply(soup.get_text(" ", strip=True))
         match = re.search(self.HTML_BODY_PATTERN, text)
@@ -372,8 +368,10 @@ class MultiPartParser(BaseBodyParser):
     def _parse_attachments(self, parts):
         if not parts:
             return
+        #print("Multipart parser: ", parts)
         for p in parts:
             filename = p.get("filename")
+            attachment_id = p.get("body", {}).get("attachmentId")
             mimeType = p.get("mimeType")
             body = p.get("body")
             data = body.get("data")
@@ -381,6 +379,11 @@ class MultiPartParser(BaseBodyParser):
             p_headers = p.get("headers")
             if p.get("parts"):
                 self._parse_attachments(p.get("parts"))
+            if filename != "" and attachment_id:
+                self._chosen["files_info"].append({
+                    "filename": filename,
+                    "gmail_attachment_id": attachment_id
+                })
 
     @property
     def body(self):
@@ -535,7 +538,7 @@ class GmailParser(BaseParser):
     def files_info(self):
         assert self._is_parsed
         if isinstance(self._body_parser, MultiPartParser):
-            return self._chosen["files_info"]
+            return self._body_parser.files_info
         return []
 
     @property
