@@ -1,10 +1,21 @@
 from django.core.exceptions import ValidationError
 from django.forms import BaseModelFormSet
+from django import forms
 
-from . import constants as c
+from . import constants as c, models as m
 
 
 class MessageThreadFormSet(BaseModelFormSet):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = kwargs.get("queryset", m.MessageThread.objects.all())
+        self.fields = kwargs.get("fields", ("job_id", "subject", "accepted_answer", "thread_type", "thread_status"))
+        self.widgets = kwargs.get("widgets", {
+                    'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),
+                    'subject': forms.Textarea(attrs={'rows':2, 'cols':35, 'readonly': 'readonly'}),
+                    })
+        self.extra = kwargs.get("extra", 0)       
 
     def clean(self):
         """
@@ -29,3 +40,16 @@ class MessageThreadFormSet(BaseModelFormSet):
                     raise ValidationError(f"The thread type cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when closing a message.")
                 if not accepted_answer or accepted_answer == "":
                     raise ValidationError(f"The accepted answer has to be filled out when closing a message. If an accepted answer is not applicable type N/A in the field.")
+
+    def create_model_formset(self, request_post=None, request_files=None):
+        ThreadsFormset = forms.modelformset_factory(
+            m.MessageThread,
+            formset=MessageThreadFormSet,
+            fields=self.fields,
+            widgets=self.widgets,
+            extra=self.extra
+        )
+        if request_post or request_files:
+            return ThreadsFormset(request_post, request_files)
+        return ThreadsFormset(queryset=self.queryset)
+

@@ -1,21 +1,15 @@
 import math
 import os
-import json
-from time import sleep
 from dateparser import parse
 from functools import wraps
 from typing import Dict, List
 
-from django.conf import settings
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
-from .models import Job, MessageThread, Message, Attachment
-from .email_parser import GmailParser
-from . import constants as c
+from . import constants as c, email_parser
 
 def token_refresh(method):
     @wraps(method)
@@ -102,7 +96,7 @@ class GmailService():
 
 def get_test_message(message_id):
     service = GmailService()
-    parser = GmailParser()
+    parser = email_parser.GmailParser()
     raw_message = service.get_message(message_id)
     parser.parse(raw_message)
     #print("\n\nraw message: ", raw_message, "\n\n")

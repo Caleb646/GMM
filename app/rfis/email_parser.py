@@ -1,7 +1,5 @@
 import re
 from typing import Dict, List
-from thefuzz import process, fuzz
-from django.utils import timezone
 from email import parser, message as py_email_message, policy
 from base64 import urlsafe_b64decode
 from bs4 import BeautifulSoup

@@ -8,7 +8,9 @@
 {% endblock %}
 
 
-{% block inherited_content %}
+{% block content %}
+
+    {{block.super}}
 
     <form method="post" class="form-inline">
         {% csrf_token %}
