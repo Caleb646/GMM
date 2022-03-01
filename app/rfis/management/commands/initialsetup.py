@@ -1,18 +1,18 @@
 from dataclasses import dataclass
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import  Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from django.conf import settings
-
 from django.utils import timezone
-from ...models import Job
-from ... import constants as c
+
+from ... import constants as c, models as m
 
 MyUser = get_user_model()
 
 USERS = {
     MyUser.objects.create_superuser : [
-            [{'email' : 'calebthomas646@yahoo.com', 'password' : settings.ADMIN_PASSWORD}, (None, None)],
+            [{'email' : settings.ADMIN_EMAIL, 'password' : settings.ADMIN_PASSWORD}, (None, None)],
         ],
     MyUser.objects.create_user : [
             [{'email' : settings.CRON_USER_NAME, 'password' : settings.CRON_USER_PASSWORD, "is_active": True}, (None, None)],
@@ -20,20 +20,25 @@ USERS = {
 }
 
 JOBS = [
-    {"name" : settings.DEFAULT_JOB_NAME, "start_date" : timezone.now()},
+    {"name" : c.FIELD_VALUE_UNKNOWN_JOB, "start_date" : timezone.now()},
     {"name" : "TestJob", "start_date" : timezone.now()}
 ]
 
 GROUPS = {
 
-    c.GROUP_NAME_STAFF_USERS: {
-        # model specific permissions
-        "myuser" : ["add","change","view"],
-        "dashboard" : ["view"],
-        "job" : ["add","delete","change","view"],
-        "messagethread" : ["change","view"],
-        "message": ["view"]
-    },
+    c.GROUP_NAME_STAFF_USERS: { 
+        # "auth" : {
+        #     # model specific permissions
+            
+        # },
+        "rfis" : {
+            #"myuser" : ["add","change","view"],
+            "dashboard" : ["view"],
+            "job" : ["add","delete","change","view"],
+            "messagethread" : ["change","view"],
+            "message": ["view"]
+        },
+    }
 }
 
 
@@ -44,7 +49,8 @@ class Command(BaseCommand):
     help = "Will create all groups, permissions, job, and user needed for testing"
 
     def handle(self, *args, **options):
-        self._create_groups()
+        #TODO this doesnt work
+        #self._create_groups()
         self._create_users()
         self._create_jobs()
 
@@ -54,11 +60,15 @@ class Command(BaseCommand):
         """
         for group_name in GROUPS:
             new_group, created = Group.objects.get_or_create(name=group_name)
-            for app_model in GROUPS[group_name]:
-                for permission_name in GROUPS[group_name][app_model]:
-                    name = "Can {} {}".format(permission_name, app_model)
-                    model_add_perm, created = Permission.objects.get_or_create(name=name)
-                    new_group.permissions.add(model_add_perm)
+            for app_name in GROUPS[group_name]:
+                for model_name in GROUPS[group_name][app_name]:
+                    for permission_name in GROUPS[group_name][app_name][model_name]:
+                        name = f"Can {permission_name} {model_name}"
+                        codename = f"{permission_name}_{model_name}"
+                        print(app_name, model_name, permission_name)
+                        content_type = ContentType.objects.get(app_label=app_name, model=model_name)
+                        model_add_perm, created = Permission.objects.get_or_create(name=name, codename=codename, content_type=content_type)
+                        new_group.permissions.add(model_add_perm)
 
     def _create_users(self, *args, **kwargs):
         for user_create_cmd in USERS:
@@ -75,4 +85,4 @@ class Command(BaseCommand):
 
     def _create_jobs(self):
         for j in JOBS:
-            job, created = Job.objects.get_or_create(**j)
+            job, created = m.Job.objects.get_or_create(**j)

@@ -6,11 +6,21 @@ from django.utils import timezone
 import uuid
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
-from . import constants as c
+from . import constants as c, utils as u
 
 class MyUser(AbstractUser):
     username = None
     email = models.EmailField('email address', unique=True)
+
+    class UserType(models.TextChoices):
+        EMPLOYEE = c.FIELD_VALUE_EMPLOYEE_USER_TYPE
+        UNKNOWN = c.FIELD_VALUE_UNKNOWN_USER_TYPE
+
+    user_type = models.CharField(
+        max_length=10,
+        choices=UserType.choices,
+        default=UserType.UNKNOWN,
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -23,7 +33,8 @@ class MyUser(AbstractUser):
 
 class Dashboard(models.Model):
     slug = models.SlugField(unique=True)
-    owner = models.CharField(max_length=200)
+    # on delete will set the owner to be the main admin specified in the .env file
+    owner = models.ForeignKey(MyUser, on_delete=models.SET(u.get_main_admin_user)) #models.CharField(max_length=200)
 
     def save(self, *args, **kwargs) -> None:
         if not self.slug:
@@ -55,7 +66,7 @@ class MessageThread(models.Model):
     subject = models.CharField(max_length=400)
     class ThreadTypes(models.TextChoices):
         UNKNOWN = c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
-        RFI = "RFI"
+        RFI = c.FIELD_VALUE_RFI_THREAD_TYPE
 
     thread_type = models.CharField(
         max_length=10,
@@ -66,7 +77,7 @@ class MessageThread(models.Model):
     due_date = models.DateTimeField()
     
     class ThreadStatus(models.TextChoices):
-        OPEN = "OPEN"
+        OPEN = c.FIELD_VALUE_OPEN_THREAD_STATUS
         CLOSED = c.FIELD_VALUE_CLOSED_THREAD_STATUS
 
     thread_status = models.CharField(
@@ -76,7 +87,7 @@ class MessageThread(models.Model):
     )
 
     #if the person who started the thread is a Thomas Builders employee we can send them notifications
-    message_thread_initiator = models.CharField(max_length=200)
+    message_thread_initiator = models.ForeignKey(MyUser, on_delete=models.SET(u.get_main_admin_user)) #models.CharField(max_length=200)
     # blank=True has to be set or the field will be required in any model form
     accepted_answer = models.TextField(default="", blank=True) 
 

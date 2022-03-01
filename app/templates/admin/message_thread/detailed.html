@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% load i18n static %}
 
+
+
 {% block inherited_content %}
     <div class="container-fluid">
+        {% include "help_button.html" %}
         {% for my_message in my_messages %}
             <div class="row bg-dark text-white p-2 m-2">
                 <div class="card bg-dark text-white" style="">

@@ -4,7 +4,12 @@ import json
 from thefuzz import process, fuzz
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
+from django.contrib.auth import get_user_model
+from django.conf import settings
 
+
+def get_main_admin_user():
+    return get_user_model().objects.get(email=settings.ADMIN_EMAIL)
 
 def get_best_match(queries: List[str], choices: List[str], string_processor=lambda x : x) -> List[str]:
     assert isinstance(queries, list)
@@ -70,7 +75,11 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
                 user = authenticate(username=uname, password=passwd)
                 if user is not None:
                     if user.is_active:
-                        login(request, user)
+                        # Don't want to log a Http Authorization user in.
+                        # They should have to reauthenticate on every request.
+                        # External apis should be the only ones using Http Authorization 
+                        # for authentication.
+                        #login(request, user)
                         request.user = user
                         return view(request, *args, **kwargs)
 

@@ -14,21 +14,23 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-load_dotenv(r"C:/Users/MyCod/Coding Projects/Python Projects/RFI App/app/.env.dev")
-
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = bool(int(os.getenv("DEBUG", default="0")))
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
-DOMAIN_URL = os.getenv("DOMAIN_URL")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-# the cron user should be a normal user not a superuser
-CRON_USER_NAME=os.getenv("CRON_USER_NAME") 
-CRON_USER_PASSWORD=os.getenv("CRON_USER_PASSWORD")
+load_dotenv(os.path.join(BASE_DIR, ".env.dev"))
 
-#TODO move these to the constants file
-DEFAULT_JOB_NAME = "Unknown"
-DEFAULT_THREAD_TYPE = "Unknown"
+SECRET_KEY = os.environ["SECRET_KEY"]
+DEBUG = bool(int(os.getenv("DEBUG", default="0")))
+ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
+DOMAIN_URL = os.environ["DOMAIN_URL"]
+
+
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
+
+
+# the cron user should be a normal user not a superuser
+CRON_USER_NAME = os.environ["CRON_USER_NAME"] 
+CRON_USER_PASSWORD = os.environ["CRON_USER_PASSWORD"]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -79,12 +81,12 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv("SQL_ENGINE"),
-        'NAME': os.getenv("SQL_DATABASE"),
-        'USER': os.getenv("POSTGRES_USER"),
-        'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
-        'HOST': os.getenv("SQL_HOST"),
-        'PORT': os.getenv("SQL_PORT")
+        'ENGINE':os.environ["SQL_ENGINE"],
+        'NAME': os.environ["SQL_DATABASE"],
+        'USER': os.environ["POSTGRES_USER"],
+        'PASSWORD': os.environ["POSTGRES_PASSWORD"],
+        'HOST': os.environ["SQL_HOST"],
+        'PORT': os.environ["SQL_PORT"]
     }
 }
 
@@ -191,8 +193,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USERNAME')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = os.environ['EMAIL_HOST_USERNAME']
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 ########################################################################################
 
 

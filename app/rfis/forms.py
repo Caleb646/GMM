@@ -7,14 +7,14 @@ class MyUserCreateForm(UserCreationForm):
 
     class Meta(UserCreationForm):
         model = m.MyUser
-        fields = ('email', 'groups',)
+        fields = ('email', 'user_type', 'groups',)
 
 
 class MyUserChangeForm(UserChangeForm):
 
     class Meta:
         model = m.MyUser
-        fields = ('email', 'groups',)
+        fields = ('email', 'user_type', 'groups',)
 
 
 class DashboardCreateForm(forms.ModelForm):

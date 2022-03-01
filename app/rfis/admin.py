@@ -1,16 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Permission
 from django.http import HttpResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
 from admin_searchable_dropdown.filters import AutocompleteFilter
 
-from .basic_views import MessageThreadDetailedView
-from .forms import MyUserCreateForm, MyUserChangeForm
-from .models import MyUser, Job, MessageThread, Message, Attachment, Dashboard
-
-from . import basic_views as v, forms as f, models as m
+from . import forms as f, models as m
+from .views import admin as admin_v
 
 
 class MyUserAdmin(UserAdmin):
@@ -18,26 +16,38 @@ class MyUserAdmin(UserAdmin):
     add_form = f.MyUserCreateForm
     form = f.MyUserChangeForm
     model = m.MyUser
-    list_display = ('email', 'is_staff', 'is_active',)
-    list_filter = ('is_staff', 'is_active',)
+    list_display = ('email', 'user_type', 'is_superuser', 'is_staff', 'is_active',)
+    list_filter = ('is_superuser', 'is_staff', 'user_type', 'is_active',)
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
+        (None, {'fields': ('email', 'password', 'user_type')}),
+        ('Permissions', {'fields': ('is_superuser', 'is_staff', 'is_active')}),
         ('Groups', {'fields': ('groups',)}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_active')}
+            'fields': ('email', 'password1', 'password2', 'user_type', 'groups', 'is_superuser', 'is_staff', 'is_active')}
         ),
     )
-    search_fields = ('email',)
-    ordering = ('email',)
+    search_fields = ('email__startswith',)
+    ordering = ('email', 'user_type')
+
+
+class MyUserDashboardFilter(AutocompleteFilter):
+    title = 'User' # display title
+    field_name = 'owner' # name of the foreign key field
+
+class MyUserMessageThreadFilter(AutocompleteFilter):
+    title = 'User' # display title
+    field_name = 'message_thread_initiator' # name of the foreign key field
 
 
 class DashboardAdmin(admin.ModelAdmin):
     search_fields = ['owner__startswith']
-    list_display = ('owner', 'slug', 'detailed_view_button')
+    list_display = ('owner', 'slug', 'detailed_view_button', 'resend_button')
+    list_filter = (
+            MyUserDashboardFilter,
+        )
     add_form = f.DashboardCreateForm
     form = f.DashboardChangeForm
 
@@ -46,13 +56,18 @@ class DashboardAdmin(admin.ModelAdmin):
             f"<a href={reverse('dashboard_detailed', args=[object.slug])}>View</a>", 
         )
 
+    def resend_button(self, object: m.Dashboard):
+        return format_html(
+            f"<a href=javascript:fetch('{reverse('dashboard_resend', args=[object.slug])}')>Resend</a>", 
+        )
+
 
 class JobAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_display = ('name', 'start_date')
 
 
-class MessageThreadFilter(AutocompleteFilter):
+class MessageThreadJobFilter(AutocompleteFilter):
     title = 'Job' # display title
     field_name = 'job_id' # name of the foreign key field
 
@@ -60,7 +75,8 @@ class MessageThreadFilter(AutocompleteFilter):
 class MessageThreadAdmin(admin.ModelAdmin):
     search_fields = ('subject__startswith', )
     list_filter = (
-            MessageThreadFilter,
+            MessageThreadJobFilter,
+            MyUserMessageThreadFilter,
             'thread_type',
             'thread_status',
         )
@@ -86,7 +102,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         # custom_urls have to be at the top of the list or django wont match them
         custom_urls = [
-            path('<int:pk>/detailed/', v.MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+            path('<int:pk>/detailed/', admin_v.MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
         ]
         return custom_urls + urls
 
@@ -107,6 +123,13 @@ class AttachmentAdmin(admin.ModelAdmin):
             'time_received',
         )
 
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = (
+            'name', 
+            'codename', 
+            'content_type',
+        )
+
 
 admin.site.site_header = "Dashboard"
 admin.site.site_title = "Dashboard"
@@ -116,6 +139,7 @@ admin.site.register(m.Job, JobAdmin)
 admin.site.register(m.MessageThread, MessageThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
+admin.site.register(Permission, PermissionAdmin)
 
 # admin_site = MyAdminSite()
 # admin_site.site_header = "Dashboard"
