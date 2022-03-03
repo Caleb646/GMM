@@ -8,7 +8,7 @@ from .. import constants as c, models as m, utils as u, formsets as f_sets
 
 
 class DashboardView(View):
-    template_name = 'rfis/dashboard/detailed.html'
+    template_name = 'message_manager/dashboard/detailed.html'
 
     def get(self, request, *args, **kwargs):
         dashboard = get_object_or_404(m.Dashboard, slug=kwargs["slug"])
@@ -18,7 +18,6 @@ class DashboardView(View):
 
         return render(request, self.template_name, {"formset" : formset})
 
-    #TODO should create a ThreadsFormset class
     def post(self, request, *args, **kwargs):      
         formset = f_sets.MessageThreadFormSet().create_model_formset(request_post=request.POST, request_files=request.FILES)
         if formset.is_valid():

@@ -45,7 +45,7 @@ INSTALLED_APPS = [
 
     # third party apps
     'admin_searchable_dropdown',
-    'django_crontab',
+    #'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -198,10 +198,6 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 ########################################################################################
 
 
-
-
-
-
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'EST'
 USE_I18N = True
@@ -209,6 +205,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
-#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 MEDIA_URL = 'media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_REPLACE_HTTPS_REFERER      = not DEBUG
+HOST_SCHEME                     = "https://" if not DEBUG else "http://"
+SECURE_PROXY_SSL_HEADER         = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else ()
+SECURE_SSL_REDIRECT             = not DEBUG
+SESSION_COOKIE_SECURE           = not DEBUG
+CSRF_COOKIE_SECURE              = not DEBUG
+SECURE_HSTS_INCLUDE_SUBDOMAINS  = not DEBUG
+SECURE_HSTS_SECONDS             = 1000000
+SECURE_FRAME_DENY               = not DEBUG

@@ -22,10 +22,13 @@ class EmailParserTestCase(TestCase):
         for msg in data["test_messages"]:
             self._parser.parse(msg["raw_gmail_message"])
 
-            answer = msg["parsed_message"]
-            answer.pop("To")
+            answer = msg["parsed_message"]   
             tested = self._parser.format_test_data()
-            tested.pop('To')
 
             #TODO the To Field is failing because the emails are not ordered the same in either dict
+            answer["To"] = sorted(answer["To"])
+            tested["To"] = sorted(tested["To"])
+
+            print(answer["To"], " || ", tested["To"])
+        
             self.assertDictEqual(tested, answer, f"\n\ntest: {tested}\n\nanswer: {answer}")
