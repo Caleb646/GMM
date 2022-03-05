@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+    {{block.super}}
+    <div class="container-fluid">
+        {% for my_message in my_messages %}
+            <div class="row bg-dark text-white p-2 m-2">
+                <div class="card bg-dark text-white" style="">
+                    <div class="card-body text-white">
+                        <h6 class="card-subtitle mb-2">Subject: {{ my_message.subject }}</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">From: {{ my_message.fromm }}</h6>
+                        <h6 class="card-subtitle mb-2 ">To: {{ my_message.to }}</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Received: {{ my_message.time_received }}</h6>
+                        <p class="card-text">{{ my_message.body }}</p>
+                        {% for atx in my_attachments %}
+                            {% if atx.message_id.id == my_message.id %}
+                                <a href="{% url 'gmail_message_attachment_download' my_message.message_id atx.gmail_attachment_id  %}" class="card-link" download>{{ atx.filename }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>  
+{% endblock %}
