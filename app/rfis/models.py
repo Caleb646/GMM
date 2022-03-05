@@ -58,7 +58,7 @@ class Job(models.Model):
     def __str__(self):
         return self.name
 
-
+#TODO add a time received field for message thread
 class MessageThread(models.Model):
     gmail_thread_id = models.CharField(max_length=200)
     job_id = models.ForeignKey(Job, on_delete=models.CASCADE)

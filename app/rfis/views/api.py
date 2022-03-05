@@ -22,6 +22,7 @@ class AttachmentDownloadView(View):
         #TODO Gmail may split large attachments into smaller parts
         # layout {size: int, data: "base64encoded"}
         gmail_attachment = gmail_service.get_attachment(message.message_id, attachment.gmail_attachment_id)
+        #print(gmail_attachment)
         response = HttpResponse(base64.urlsafe_b64decode(gmail_attachment["data"]), headers={
             'Content-Type': 'application/vnd.ms-excel',
             'Content-Disposition': f"attachment; filename={attachment.filename}",

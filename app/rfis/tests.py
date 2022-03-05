@@ -25,7 +25,9 @@ class EmailParserTestCase(TestCase):
             answer = msg["parsed_message"]   
             tested = self._parser.format_test_data()
 
-            #TODO the To Field is failing because the emails are not ordered the same in either dict
+            # Because part of the email address parsing uses a 
+            # set to remove duplicates the order is sometimes not the same.
+            # This fixes that and makes them comparable.
             answer["To"] = sorted(answer["To"])
             tested["To"] = sorted(tested["To"])
 
