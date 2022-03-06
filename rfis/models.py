@@ -43,7 +43,7 @@ class Dashboard(models.Model):
         return super().save(*args, **kwargs)
 
 class Job(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     start_date = models.DateTimeField()
 
     objects = JobManager()

@@ -73,6 +73,8 @@ class GmailService():
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
+        loaded_creds = GmailService.load_client_token()
+        print(loaded_creds)
         creds = Credentials.from_authorized_user_info(GmailService.load_client_token(), c.GMAIL_API_SCOPES)
             #creds = Credentials.from_authorized_user_file(c.GMAIL_API_CREDENTIALS_FILENAME, c.GMAIL_API_SCOPES)
         if not creds or not creds.valid:

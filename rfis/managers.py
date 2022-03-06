@@ -52,7 +52,12 @@ class JobManager(BaseUserManager):
     def get_or_unknown(self, name, **kwargs):
         if self.all().filter(name=name).exists():
             return self.get(name=name)
-        return self.get(name=c.FIELD_VALUE_UNKNOWN_JOB)       
+        return self.get(name=c.FIELD_VALUE_UNKNOWN_JOB)   
+
+    def get_or_create(self, *args, **kwargs):
+        if self.filter(name=kwargs.get("name")).exists():
+            return (self.get(name=kwargs.get("name")), False)
+        return (self.create(**kwargs), True)    
         
 class MessageThreadManager(BaseUserManager):
 
