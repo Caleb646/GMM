@@ -37,10 +37,11 @@ class MyUserManager(BaseUserManager):
             return self.get(email=email)
         return self.create_user(email, str(uuid.uuid4()), **kwargs)
 
-    def get_or_create(self, email, *args, **kwargs):
-        if self.filter(email=email).exists():
-            return (self.get(email=email), False)
-        return (self.create_user(email, **kwargs), True)
+    def get_or_create(self, *args, **kwargs):
+        print(kwargs)
+        if self.filter(email=kwargs.get("email")).exists():
+            return (self.get(email=kwargs.get("email")), False)
+        return (self.create_user(**kwargs), True)
 
     def reset_password(self, password):
         self.set_password(password)
