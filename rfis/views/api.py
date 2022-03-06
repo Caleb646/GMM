@@ -10,6 +10,8 @@ from django.core.mail import send_mass_mail, send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+from constance import config
+
 from .. import constants as c, models as m, utils as u, gmail_service as g_service, email_parser as e_parser
 
 
@@ -19,7 +21,6 @@ class AttachmentDownloadView(View):
         message = m.Message.objects.get(message_id=kwargs["message_id"])
         attachment = m.Attachment.objects.get(message_id=message, gmail_attachment_id=kwargs["attachment_id"])
         gmail_service = g_service.GmailService()
-        #TODO Gmail may split large attachments into smaller parts
         # layout {size: int, data: "base64encoded"}
         gmail_attachment = gmail_service.get_attachment(message.message_id, attachment.gmail_attachment_id)
         #print(gmail_attachment)
@@ -79,8 +80,6 @@ def gmail_get_unread_messages(request, *args, **kwargs):
 
             #print(f"\n\nraw gmail msg:\t {msg}\n\n")
             g_parser.parse(msg)
-            # store message id so these messages can be marked as read later
-            service.messages_read.append(g_parser.message_id)
             
             #print(f"\nmessage data: {g_parser.format_test_data('')}\n")
 
@@ -88,16 +87,22 @@ def gmail_get_unread_messages(request, *args, **kwargs):
                 # TODO keep commented out unless getting test data
                 #create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
 
-
+            #TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
+            if not m.MyUser.objects.filter(email=g_parser.fromm).exists():
+                continue
+            # store message id so these messages can be marked as read later
+            service.messages_read.append(g_parser.message_id)
             job = m.Job.objects.get_or_unknown(g_parser.job_name)
+            time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
+
             message_thread = m.MessageThread.objects.create_or_get(
                 g_parser.thread_id,
                 job_id=job,
                 thread_type=g_parser.thread_type,
+                time_received=time_message_received,
                 subject=g_parser.subject,
                 message_thread_initiator=m.MyUser.objects.get_or_create_unknown_user(g_parser.fromm)
-            )
-            time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
+            )           
             message = m.Message.objects.create_or_get(
                 g_parser.message_id,
                 message_thread_id=message_thread,
@@ -106,6 +111,7 @@ def gmail_get_unread_messages(request, *args, **kwargs):
                 debug_unparsed_body=g_parser.debug_unparsed_body,
                 fromm=g_parser.fromm,
                 to=g_parser.to,
+                cc=g_parser.cc,
                 time_received=time_message_received
             )
             for f_info in g_parser.files_info:
@@ -116,14 +122,16 @@ def gmail_get_unread_messages(request, *args, **kwargs):
                     message_id=message
                 )
     #TODO uncomment
-    #service.mark_read_messages()
+    service.mark_read_messages()
     return JsonResponse({c.JSON_RESPONSE_MSG_KEY : "Messages were added successfully."}, status=200)
    
 @u.logged_in_or_basicauth()
 def notify_users_of_open_messages(request, *args, **kwargs):
-    all_employees = m.MyUser.objects.filter(user_type=m.MyUser.UserType.EMPLOYEE)
+    #TODO only users with the receive notifications permission are sent an email.
+    # may need to change this with a setting in the future
+    all_users = u.get_users_with_permission("rfis.receive_notifications", include_su=False) #m.MyUser.objects.filter(user_type=m.MyUser.UserType.EMPLOYEE)
     messages = []
-    for user in all_employees:
+    for user in all_users:
         user_dashboard, created = m.Dashboard.objects.get_or_create(owner=user)
         total_open_messages = m.MessageThread.objects.filter(message_thread_initiator=user).count()
         ctx = {

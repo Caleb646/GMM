@@ -10,7 +10,7 @@ class MessageThreadFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queryset = kwargs.get("queryset", m.MessageThread.objects.all())
-        self.fields = kwargs.get("fields", ("job_id", "subject", "accepted_answer", "thread_type", "thread_status"))
+        self.fields = kwargs.get("fields", ("job_id", "subject", "accepted_answer", "time_received", "thread_type", "thread_status"))
         self.widgets = kwargs.get("widgets", {
                     'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),
                     'subject': forms.Textarea(attrs={'rows':2, 'cols':35, 'readonly': 'readonly'}),

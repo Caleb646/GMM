@@ -1,5 +1,4 @@
 import datetime
-from typing import Iterable, Optional
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -8,19 +7,21 @@ import uuid
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
 from . import constants as c, utils as u
 
+
 class MyUser(AbstractUser):
     username = None
     email = models.EmailField('email address', unique=True)
 
-    class UserType(models.TextChoices):
-        EMPLOYEE = c.FIELD_VALUE_EMPLOYEE_USER_TYPE
-        UNKNOWN = c.FIELD_VALUE_UNKNOWN_USER_TYPE
+    # class UserType(models.TextChoices):
+    #     ROBOT = c.FIELD_VALUE_ROBOT_USER_TYPE
+    #     EMPLOYEE = c.FIELD_VALUE_EMPLOYEE_USER_TYPE
+    #     UNKNOWN = c.FIELD_VALUE_UNKNOWN_USER_TYPE
 
-    user_type = models.CharField(
-        max_length=10,
-        choices=UserType.choices,
-        default=UserType.UNKNOWN,
-    )
+    # user_type = models.CharField(
+    #     max_length=10,
+    #     choices=UserType.choices,
+    #     default=UserType.UNKNOWN,
+    # )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -58,7 +59,9 @@ class Job(models.Model):
     def __str__(self):
         return self.name
 
-#TODO add a time received field for message thread
+
+#TODO make MessageType a model. Add an alternate names field to it. So new ones can be added dynamically. Also, add
+# a foreign key field for it in MessageThread
 class MessageThread(models.Model):
     gmail_thread_id = models.CharField(max_length=200)
     job_id = models.ForeignKey(Job, on_delete=models.CASCADE)
@@ -74,6 +77,7 @@ class MessageThread(models.Model):
         default=ThreadTypes.UNKNOWN,
     )
 
+    time_received = models.DateTimeField(default=timezone.now)
     due_date = models.DateTimeField()
     
     class ThreadStatus(models.TextChoices):
@@ -96,6 +100,8 @@ class MessageThread(models.Model):
     def save(self, *args, **kwargs):
         if not self.due_date:
             self.due_date = timezone.now() + datetime.timedelta(days=7)
+        if not self.time_received:
+            self.time_received = timezone.now()
         return super().save(*args, **kwargs)
 
     class Meta:
@@ -111,7 +117,7 @@ class Message(models.Model):
     debug_unparsed_body = models.TextField(default="")
     fromm = models.CharField(max_length=100)
     to = models.CharField(max_length=200)
-    #TODO add Cc field
+    cc = models.CharField(max_length=1000)
     time_received = models.DateTimeField()
 
     objects = MessageManager()

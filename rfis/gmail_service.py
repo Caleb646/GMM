@@ -1,15 +1,21 @@
 import math
 import os
+import json
 from dateparser import parse
 from functools import wraps
 from typing import Dict, List
 
+from django.core.files.storage import default_storage
+from django.core.files import base
+
+from constance import config
+from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from . import constants as c, email_parser
+from . import constants as c, email_parser, models as m
 
 def token_refresh(method):
     @wraps(method)
@@ -22,39 +28,67 @@ def token_refresh(method):
     return refresh
 
 
-#TODO need to deal with spam mail somehow. Maybe only accept messages from pre-approved users
 class GmailService():
     def __init__(self) -> None:
         self.token: Credentials = None
         self.service = self._build_service()
         self.messages_read: List[Dict[str : str]] = []
 
+    @staticmethod
+    def load_client_secret_config_f_file():
+        assert default_storage.exists(name=config.GMAIL_WEB_CLIENT_SECRET)
+        if isinstance(default_storage, S3Boto3Storage):
+            file: S3Boto3StorageFile = default_storage.open(config.GMAIL_WEB_CLIENT_SECRET, "rb")
+            data = json.load(file)
+            file.close()
+            return data
+        return json.load(default_storage.open(config.GMAIL_WEB_CLIENT_SECRET, "rb"))
+
+    @staticmethod
+    def load_client_token():
+        #storage_class = get_storage_class()()
+        assert default_storage.exists(name=c.GMAIL_API_CREDENTIALS_FILENAME)
+        if isinstance(default_storage, S3Boto3Storage):
+            file: S3Boto3StorageFile = default_storage.open(c.GMAIL_API_CREDENTIALS_FILENAME, "rb")
+            data = json.load(file)
+            file.close()
+            return data
+        return json.load(default_storage.open(c.GMAIL_API_CREDENTIALS_FILENAME, "rb"))
+
+    @staticmethod
+    def save_client_token(credentials: Credentials):
+        if isinstance(default_storage, S3Boto3Storage):
+            file: S3Boto3StorageFile = default_storage.open(c.GMAIL_API_CREDENTIALS_FILENAME, "w")
+            file.write(credentials.to_json())
+            file.close()
+        else:
+            if default_storage.exists(name=c.GMAIL_API_CREDENTIALS_FILENAME):
+                default_storage.delete(c.GMAIL_API_CREDENTIALS_FILENAME)
+            default_storage.save(c.GMAIL_API_CREDENTIALS_FILENAME, 
+                base.ContentFile(credentials.to_json(), c.GMAIL_API_CREDENTIALS_FILENAME)
+            )
+
     def get_credentials(self):
-        creds = None
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists(c.GMAIL_API_CREDENTIALS_FILENAME):
-            creds = Credentials.from_authorized_user_file(c.GMAIL_API_CREDENTIALS_FILENAME, c.GMAIL_API_SCOPES)
+        creds = Credentials.from_authorized_user_info(GmailService.load_client_token(), c.GMAIL_API_SCOPES)
+            #creds = Credentials.from_authorized_user_file(c.GMAIL_API_CREDENTIALS_FILENAME, c.GMAIL_API_SCOPES)
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
                 raise ValueError("Credentials cannot be null or expired")
         self.token = creds
-        self._save_token() # write token to file for later use
-        return creds
+        GmailService.save_client_token(self.token) # write token to file for later use
 
     def _refresh_token(self):
         self.token.refresh(Request())
-        self._save_token()
-    
-    def _save_token(self):
-        with open(c.GMAIL_API_CREDENTIALS_FILENAME, 'w') as f:
-            f.write(self.token.to_json())
+        GmailService.save_client_token(self.token)
 
     def _build_service(self, *args, **kwargs):
-        return build('gmail', 'v1', credentials=self.get_credentials())
+        self.get_credentials()
+        return build('gmail', 'v1', credentials=self.token)
 
     def find_earliest_message_index(self, messages: List[Dict]):
         earliest_message_index = 0

@@ -3,10 +3,25 @@ import base64
 import json
 from thefuzz import process, fuzz
 from django.http import HttpResponse
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.conf import settings
+from django.db.models import Q
 
+from constance import config
+
+
+def get_permission_object(permission_str): # rfis.view_message
+    app_label, codename = permission_str.split('.')
+    return Permission.objects.filter(content_type__app_label=app_label, codename=codename).first()
+
+def get_users_with_permission(permission_str, include_su=True):
+    permission_obj = get_permission_object(permission_str)
+    q = Q(groups__permissions=permission_obj) | Q(user_permissions=permission_obj)
+    if include_su:
+        q |= Q(is_superuser=True)
+    return get_user_model().objects.filter(q).distinct()
 
 def get_main_admin_user():
     return get_user_model().objects.get(email=settings.ADMIN_EMAIL)

@@ -30,13 +30,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles', 
 
+    # third party apps
+    "admin_searchable_dropdown",
+    "storages",
+    "constance",
+    "constance.backends.database",
+    #'django_crontab',
+
     # my apps
     'rfis', 
-
-    # third party apps
-    'admin_searchable_dropdown',
-    "storages"
-    #'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -136,13 +138,13 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#TODO uncomment
+#TODO uncomment. These settings are causing problems
 # CORS_REPLACE_HTTPS_REFERER      = not DEBUG
 # HOST_SCHEME                     = "https://" if not DEBUG else "http://"
 # SECURE_PROXY_SSL_HEADER         = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else ()
-# SECURE_SSL_REDIRECT             = not DEBUG
-# SESSION_COOKIE_SECURE           = not DEBUG
-# CSRF_COOKIE_SECURE              = not DEBUG
+SECURE_SSL_REDIRECT             = not DEBUG
+SESSION_COOKIE_SECURE           = not DEBUG
+CSRF_COOKIE_SECURE              = not DEBUG
 # SECURE_HSTS_INCLUDE_SUBDOMAINS  = not DEBUG
 # SECURE_HSTS_SECONDS             = 1000000
 # SECURE_FRAME_DENY               = not DEBUG

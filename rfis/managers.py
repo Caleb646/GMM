@@ -30,14 +30,17 @@ class MyUserManager(BaseUserManager):
         kwargs.setdefault('is_staff', True)
         kwargs.setdefault('is_superuser', True)
         kwargs.setdefault('is_active', True)
-        kwargs.setdefault('user_type', c.FIELD_VALUE_EMPLOYEE_USER_TYPE)
         return self.create_user(email, password, **kwargs)
 
     def get_or_create_unknown_user(self, email, *args, **kwargs):
         if self.filter(email=email).exists():
             return self.get(email=email)
-        kwargs.setdefault('user_type', c.FIELD_VALUE_UNKNOWN_USER_TYPE)
         return self.create_user(email, str(uuid.uuid4()), **kwargs)
+
+    def get_or_create(self, email, *args, **kwargs):
+        if self.filter(email=email).exists():
+            return (self.get(email=email), False)
+        return (self.create_user(email, **kwargs), True)
 
     def reset_password(self, password):
         self.set_password(password)

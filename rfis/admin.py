@@ -7,8 +7,7 @@ from django.utils.html import format_html
 
 from admin_searchable_dropdown.filters import AutocompleteFilter
 
-from . import forms as f, models as m
-from .views import admin as admin_v
+from . import forms as f, models as m, views as v
 
 
 class MyUserAdmin(UserAdmin):
@@ -16,21 +15,21 @@ class MyUserAdmin(UserAdmin):
     add_form = f.MyUserCreateForm
     form = f.MyUserChangeForm
     model = m.MyUser
-    list_display = ('email', 'user_type', 'is_superuser', 'is_staff', 'is_active',)
-    list_filter = ('is_superuser', 'is_staff', 'user_type', 'is_active',)
+    list_display = ('email', 'is_superuser', 'is_staff', 'is_active',)
+    list_filter = ('groups','is_superuser', 'is_staff', 'is_active',)
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'user_type')}),
+        (None, {'fields': ('email', 'password')}),
         ('Permissions', {'fields': ('is_superuser', 'is_staff', 'is_active')}),
         ('Groups', {'fields': ('groups',)}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'user_type', 'groups', 'is_superuser', 'is_staff', 'is_active')}
+            'fields': ('email', 'password1', 'password2', 'groups', 'is_superuser', 'is_staff', 'is_active')}
         ),
     )
     search_fields = ('email__startswith',)
-    ordering = ('email', 'user_type')
+    ordering = ('email', 'groups')
 
 
 class MyUserDashboardFilter(AutocompleteFilter):
@@ -77,6 +76,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
     list_filter = (
             MessageThreadJobFilter,
             MyUserMessageThreadFilter,
+            'time_received',
             'thread_type',
             'thread_status',
         )
@@ -87,6 +87,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
             "accepted_answer",
             'thread_status',
             'thread_type', 
+            'time_received',
             'due_date',
             'detailed_view_button'
         )
@@ -102,7 +103,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         # custom_urls have to be at the top of the list or django wont match them
         custom_urls = [
-            path('<int:pk>/detailed/', admin_v.MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+            path('<int:pk>/detailed/', v.MessageThreadDetailedView.as_view(), name="message_thread_detailed_view"),
         ]
         return custom_urls + urls
 
