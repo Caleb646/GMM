@@ -36,13 +36,14 @@ class GmailService():
 
     @staticmethod
     def load_client_secret_config_f_file():
-        assert default_storage.exists(name=config.GMAIL_WEB_CLIENT_SECRET)
+        head, tail = os.path.split(config.GMAIL_WEB_CLIENT_SECRET)
+        assert default_storage.exists(name=tail)
         if isinstance(default_storage, S3Boto3Storage):
-            file: S3Boto3StorageFile = default_storage.open(config.GMAIL_WEB_CLIENT_SECRET, "rb")
+            file: S3Boto3StorageFile = default_storage.open(tail, "rb")
             data = json.load(file)
             file.close()
             return data
-        return json.load(default_storage.open(config.GMAIL_WEB_CLIENT_SECRET, "rb"))
+        return json.load(default_storage.open(tail, "rb"))
 
     @staticmethod
     def load_client_token():

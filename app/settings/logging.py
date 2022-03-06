@@ -45,6 +45,21 @@ LOGGING = {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security.*': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends.schema': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
         }
     }
 }
