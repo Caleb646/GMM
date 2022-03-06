@@ -3,9 +3,9 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-if not os.getenv("DEBUG"): # if DEBUG environment variable is set dont load the .env file
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(BASE_DIR, ".env.dev"))
+# if not os.getenv("DEBUG"): # if DEBUG environment variable is set dont load the .env file
+#     from dotenv import load_dotenv
+#     load_dotenv(os.path.join(BASE_DIR, ".env.dev"))
 
 if bool(int(os.getenv("DEBUG", "0"))):
     STATIC_URL = '/static/'

@@ -23,12 +23,13 @@ class AttachmentDownloadView(View):
         gmail_service = g_service.GmailService()
         # layout {size: int, data: "base64encoded"}
         gmail_attachment = gmail_service.get_attachment(message.message_id, attachment.gmail_attachment_id)
-        #print(gmail_attachment)
-        response = HttpResponse(base64.urlsafe_b64decode(gmail_attachment["data"]), headers={
-            'Content-Type': 'application/vnd.ms-excel',
-            'Content-Disposition': f"attachment; filename={attachment.filename}",
-        })
-        return response
+        return HttpResponse(
+            base64.urlsafe_b64decode(gmail_attachment["data"]),
+            headers={
+                'Content-Type': 'application/vnd.ms-excel',
+                'Content-Disposition': f"attachment; filename={attachment.filename}",
+            },
+        )
 
 @login_required
 def resend_dashboard_link(request, *args, **kwargs):
@@ -67,10 +68,7 @@ def gmail_get_unread_messages(request, *args, **kwargs):
         if earliest_message_index != len(messages):
             earliest_message = messages[earliest_message_index]
             first_message = messages[0]
-            temp = earliest_message
-            earliest_message = first_message
-            first_message = temp
-
+            earliest_message, first_message = first_message, earliest_message
         for msg in messages:
             current_count += 1
             #rate limit requests
@@ -80,7 +78,7 @@ def gmail_get_unread_messages(request, *args, **kwargs):
 
             #print(f"\n\nraw gmail msg:\t {msg}\n\n")
             g_parser.parse(msg)
-            
+
             #print(f"\nmessage data: {g_parser.format_test_data('')}\n")
 
             #if not m.Message.objects.filter(message_id=g_parser.message_id).exists():
@@ -95,15 +93,15 @@ def gmail_get_unread_messages(request, *args, **kwargs):
             job = m.Job.objects.get_or_unknown(g_parser.job_name)
             time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
 
-            message_thread = m.MessageThread.objects.create_or_get(
+            message_thread = m.MessageThread.objects.get_or_create(
                 g_parser.thread_id,
                 job_id=job,
                 thread_type=g_parser.thread_type,
                 time_received=time_message_received,
                 subject=g_parser.subject,
-                message_thread_initiator=m.MyUser.objects.get_or_create_unknown_user(g_parser.fromm)
+                message_thread_initiator=m.MyUser.objects.get_or_create(email=g_parser.fromm)
             )           
-            message = m.Message.objects.create_or_get(
+            message = m.Message.objects.get_or_create(
                 g_parser.message_id,
                 message_thread_id=message_thread,
                 subject=g_parser.subject,

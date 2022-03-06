@@ -15,7 +15,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from . import constants as c, email_parser, models as m
+from . import constants as c, email_parser
 
 def token_refresh(method):
     @wraps(method)

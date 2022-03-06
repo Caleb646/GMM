@@ -1,7 +1,9 @@
-from django.test import TestCase
+from django.test import TestCase, Client, override_settings
 import json
 
-from . import constants as c, email_parser as eparser, models as m
+from app.app.settings.settings import USE_SSL
+
+from . import constants as c, email_parser as eparser, models as m, gmail_service
 
 class EmailParserTestCase(TestCase):
     def setUp(self):
@@ -31,4 +33,21 @@ class EmailParserTestCase(TestCase):
             answer["To"] = sorted(answer["To"])
             tested["To"] = sorted(tested["To"])
         
-            self.assertDictEqual(tested, answer, f"\n\ntest: {tested}\n\nanswer: {answer}")
+            self.assertDictEqual(tested, answer, f"\n\nTest: {tested}\n\nAnswer: {answer}")
+
+
+class GmailServiceTestCase(TestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.gservice = gmail_service.GmailService()
+
+    @override_settings(DEBUG="0", USE_SSL="0") # set debug to false to use AWS S3 storage
+    def test_save_load_tokens_credentials(self):
+        pass
+
+    #TODO need to test gmail api methods. Instead of test the views themselves just test the methods that
+    # make up the views. 
+    # 1. Test save and load client config and client tokens
+    # 2. Test getting a single message and thread
+    # 3. Test refresh decorator
+    # 4. Tests need to be run in production env as well w/ AWS S3 storage

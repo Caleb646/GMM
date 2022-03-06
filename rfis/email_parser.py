@@ -201,8 +201,7 @@ class BaseBodyParser(BaseParser):
         self._clear()
         self._chosen["body"] = []
         self._chosen["debug_unparsed_body"] = []
-        msg_parts = payload.get("parts")
-        if msg_parts:
+        if msg_parts := payload.get("parts"):
             self._parse_parts(msg_parts)
         else:
             txt = self._parse_body(payload.get("body", {}).get("data"))
@@ -294,10 +293,7 @@ class HtmlParser(BaseBodyParser):
         soup = BeautifulSoup(urlsafe_b64decode(data).decode(), "html.parser")
         self._chosen["debug_unparsed_body"].append(str(soup.prettify())) # store all of the text before the regex is applied for debugging
         text = EmailReplyParser.parse_reply(soup.get_text(" ", strip=True))
-        match = re.search(self.HTML_BODY_PATTERN, text)
-
-        #print("\n############ start html text: #####################\n", text, "\n################ end text ###################################\n")
-        if match:
+        if match := re.search(self.HTML_BODY_PATTERN, text):
             return text[: match.span()[0]]
         return text
 
@@ -503,7 +499,7 @@ class GmailParser(BaseParser):
 
     def _parse_email_address(self, email_string: str):
         address_or_addresses: List[str] = re.findall(self.EMAIL_ADDRESS_PATTERN, email_string)
-        if len(address_or_addresses) == 0:
+        if not address_or_addresses:
             return [""]
         return list(set(address_or_addresses))
 

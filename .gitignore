@@ -7,3 +7,9 @@ token.json
 **__pycache__**
 **migrations**
 **media**
+
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover

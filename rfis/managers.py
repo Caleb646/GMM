@@ -32,14 +32,11 @@ class MyUserManager(BaseUserManager):
         kwargs.setdefault('is_active', True)
         return self.create_user(email, password, **kwargs)
 
-    def get_or_create_unknown_user(self, email, *args, **kwargs):
-        if self.filter(email=email).exists():
-            return self.get(email=email)
-        return self.create_user(email, str(uuid.uuid4()), **kwargs)
-
     def get_or_create(self, *args, **kwargs):
         if self.filter(email=kwargs.get("email")).exists():
             return (self.get(email=kwargs.get("email")), False)
+        # if password isnt present set it to a random one
+        kwargs.setdefault("password", str(uuid.uuid4()))
         return (self.create_user(**kwargs), True)
 
     def reset_password(self, password):
@@ -61,14 +58,14 @@ class JobManager(BaseUserManager):
         
 class MessageThreadManager(BaseUserManager):
 
-    def create_or_get(self, gmail_thread_id, **kwargs):       
+    def get_or_create(self, gmail_thread_id, **kwargs):       
         if self.all().filter(gmail_thread_id=gmail_thread_id).exists():
             return self.get(gmail_thread_id=gmail_thread_id)
         return self.create(gmail_thread_id=gmail_thread_id, **kwargs)
 
 class MessageManager(BaseUserManager):
 
-    def create_or_get(self, message_id, **kwargs):       
+    def get_or_create(self, message_id, **kwargs):       
         if self.all().filter(message_id=message_id).exists():
             return self.get(message_id=message_id)
         return self.create(message_id=message_id, **kwargs)
