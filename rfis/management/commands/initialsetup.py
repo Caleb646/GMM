@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils import timezone
+import django
 
 from ... import constants as c, models as m
 
@@ -78,9 +79,14 @@ class Command(BaseCommand):
 
     def _create_users(self, *args, **kwargs):
         for user_info in USERS:
-            user, created = get_user_model().objects.get_or_create(**user_info)
-            print(f"User: {user_info.get('email')} created successfully")
-
+            try:
+                user, created = get_user_model().objects.get_or_create(**user_info)
+                print(f"User: {user_info.get('email')} created successfully")
+                continue
+            except django.db.utils.IntegrityError:
+                continue
+            raise
+            
     def _create_jobs(self):
         for j in JOBS:
             job, created = m.Job.objects.get_or_create(**j)
