@@ -30,7 +30,5 @@ class EmailParserTestCase(TestCase):
             # This fixes that and makes them comparable.
             answer["To"] = sorted(answer["To"])
             tested["To"] = sorted(tested["To"])
-
-            print(answer["To"], " || ", tested["To"])
         
             self.assertDictEqual(tested, answer, f"\n\ntest: {tested}\n\nanswer: {answer}")

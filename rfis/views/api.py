@@ -54,7 +54,7 @@ def gmail_get_unread_messages(request, *args, **kwargs):
     current_count = 0
     max_count_before_sleep = 25
 
-    print("getting unread messages")
+    print("Getting unread messages")
 
     for thread_info in unread_threads:
         thread = service.get_thread(thread_info["id"])

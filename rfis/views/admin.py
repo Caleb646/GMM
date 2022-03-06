@@ -19,8 +19,6 @@ class MessageThreadDetailedView(LoginRequiredMixin, View):
         return render(request, self.template_name, {"my_messages" : messages, "my_attachments" : attachments})
 
 class GmailAuthorize(LoginRequiredMixin, View):
-    #TODO this is failing in heroku. Must be the redirect URI?
-    #TODO need to setup logging
     def get(self, request, format=None):
         # If modifying these scopes
         flow = Flow.from_client_config(gmail_service.GmailService.load_client_secret_config_f_file(), scopes=c.GMAIL_API_SCOPES)
@@ -54,7 +52,5 @@ class GmailOAuthCallback(View):
         flow.redirect_uri = c.GMAIL_REDIRECT_URI
         # Use the authorization server's response to fetch the OAuth 2.0 tokens.
         flow.fetch_token(code=url_params["code"])
-        print("before saving token") 
-        gmail_service.GmailService.save_client_token(flow.credentials)    
-        print("after saving token")   
+        gmail_service.GmailService.save_client_token(flow.credentials)     
         return redirect(reverse("admin:login"))

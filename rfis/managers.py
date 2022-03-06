@@ -38,7 +38,6 @@ class MyUserManager(BaseUserManager):
         return self.create_user(email, str(uuid.uuid4()), **kwargs)
 
     def get_or_create(self, *args, **kwargs):
-        print(kwargs)
         if self.filter(email=kwargs.get("email")).exists():
             return (self.get(email=kwargs.get("email")), False)
         return (self.create_user(**kwargs), True)
