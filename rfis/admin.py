@@ -66,6 +66,16 @@ class JobAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date')
 
 
+class MessageThreadTypeAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ('name',)
+
+
+class MessageThreadTypeAlternativeNameAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+    list_display = ('name',)
+
+
 class MessageThreadJobFilter(AutocompleteFilter):
     title = 'Job' # display title
     field_name = 'job_id' # name of the foreign key field
@@ -137,9 +147,12 @@ admin.site.site_title = "Dashboard"
 admin.site.register(m.MyUser, MyUserAdmin)
 admin.site.register(m.Dashboard, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
+admin.site.register(m.MessageThreadType, MessageThreadTypeAdmin)
+admin.site.register(m.MessageThreadTypeAlternativeName, MessageThreadTypeAlternativeNameAdmin)
 admin.site.register(m.MessageThread, MessageThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
+
 admin.site.register(Permission, PermissionAdmin)
 
 # admin_site = MyAdminSite()

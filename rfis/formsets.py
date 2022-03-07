@@ -14,6 +14,7 @@ class MessageThreadFormSet(BaseModelFormSet):
         self.widgets = kwargs.get("widgets", {
                     'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),
                     'subject': forms.Textarea(attrs={'rows':2, 'cols':35, 'readonly': 'readonly'}),
+                    'time_received': forms.DateTimeInput(attrs={'readonly': 'readonly'}, format='%m/%d/%y %H:%M')
                     })
         self.extra = kwargs.get("extra", 0)       
 
@@ -39,7 +40,7 @@ class MessageThreadFormSet(BaseModelFormSet):
                 if thread_type == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
                     raise ValidationError(f"The thread type cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when closing a message.")
                 if not accepted_answer or accepted_answer == "":
-                    raise ValidationError(f"The accepted answer has to be filled out when closing a message. If an accepted answer is not applicable type N/A in the field.")
+                    raise ValidationError("The accepted answer has to be filled out when closing a message. If an accepted answer is not applicable type N/A in the field.")
 
     def create_model_formset(self, request_post=None, request_files=None):
         ThreadsFormset = forms.modelformset_factory(

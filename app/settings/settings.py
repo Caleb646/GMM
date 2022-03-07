@@ -12,11 +12,6 @@ DEBUG = bool(int(os.getenv("DEBUG", default="0")))
 ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 DOMAIN_URL = os.environ["DOMAIN_URL"]
 
-
-ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
-ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
-
-
 # the cron user should be a normal user not a superuser
 CRON_USER_NAME = os.environ["CRON_USER_NAME"] 
 CRON_USER_PASSWORD = os.environ["CRON_USER_PASSWORD"]
@@ -124,7 +119,10 @@ AUTH_USER_MODEL = 'rfis.MyUser'
 
 
 ####################### Email Setup ###############################################
-ADMINS = [("Main Admin", ADMIN_EMAIL)] # needed for the AdminEmailHandler to work
+# needed for initial setup
+ADMINS_INFO = [(ainfo.split(",")[0], ainfo.split(",")[1], ainfo.split(",")[2]) for ainfo in os.environ["ADMINS"].split("|") if ainfo != ""]
+# needed for the AdminEmailHandler to work
+ADMINS =  [(name, email) for name, email, password in ADMINS_INFO]
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587

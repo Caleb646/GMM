@@ -32,7 +32,8 @@ class MyUserManager(BaseUserManager):
         kwargs.setdefault('is_active', True)
         return self.create_user(email, password, **kwargs)
 
-    def get_or_create(self, *args, **kwargs):
+    def get_or_create(self, **kwargs):
+        print("get or create user")
         if self.filter(email=kwargs.get("email")).exists():
             return (self.get(email=kwargs.get("email")), False)
         # if password isnt present set it to a random one
@@ -46,28 +47,33 @@ class MyUserManager(BaseUserManager):
 
 class JobManager(BaseUserManager):
 
-    def get_or_unknown(self, name, **kwargs):
+    def get_or_unknown(self, **kwargs):
+        name = kwargs.get("name")   
         if self.all().filter(name=name).exists():
             return self.get(name=name)
         return self.get(name=c.FIELD_VALUE_UNKNOWN_JOB)   
 
-    def get_or_create(self, *args, **kwargs):
+    def get_or_create(self, **kwargs):
         if self.filter(name=kwargs.get("name")).exists():
             return (self.get(name=kwargs.get("name")), False)
         return (self.create(**kwargs), True)    
+
         
 class MessageThreadManager(BaseUserManager):
 
-    def get_or_create(self, gmail_thread_id, **kwargs):       
+    def get_or_create(self, **kwargs):
+        gmail_thread_id = kwargs.get("gmail_thread_id")       
         if self.all().filter(gmail_thread_id=gmail_thread_id).exists():
-            return self.get(gmail_thread_id=gmail_thread_id)
-        return self.create(gmail_thread_id=gmail_thread_id, **kwargs)
+            return (self.get(gmail_thread_id=gmail_thread_id), False)
+        return (self.create(**kwargs), True)
+        
 
 class MessageManager(BaseUserManager):
 
-    def get_or_create(self, message_id, **kwargs):       
+    def get_or_create(self, **kwargs):       
+        message_id = kwargs.get("message_id")
         if self.all().filter(message_id=message_id).exists():
-            return self.get(message_id=message_id)
-        return self.create(message_id=message_id, **kwargs)
+            return (self.get(message_id=message_id), False)
+        return (self.create(**kwargs), True)
 
 

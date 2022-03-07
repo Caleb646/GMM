@@ -2,6 +2,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.conf import settings
 import uuid
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
@@ -12,21 +13,15 @@ class MyUser(AbstractUser):
     username = None
     email = models.EmailField('email address', unique=True)
 
-    # class UserType(models.TextChoices):
-    #     ROBOT = c.FIELD_VALUE_ROBOT_USER_TYPE
-    #     EMPLOYEE = c.FIELD_VALUE_EMPLOYEE_USER_TYPE
-    #     UNKNOWN = c.FIELD_VALUE_UNKNOWN_USER_TYPE
-
-    # user_type = models.CharField(
-    #     max_length=10,
-    #     choices=UserType.choices,
-    #     default=UserType.UNKNOWN,
-    # )
-
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     objects = MyUserManager()
+
+    @staticmethod
+    def get_user_sentinel_id():
+        fullname, email = settings.ADMINS[0] # just pick the first admin
+        return MyUser.objects.get(email=email)
 
     def __str__(self):
         return self.email
@@ -35,7 +30,7 @@ class MyUser(AbstractUser):
 class Dashboard(models.Model):
     slug = models.SlugField(unique=True)
     # on delete will set the owner to be the main admin specified in the .env file
-    owner = models.ForeignKey(MyUser, on_delete=models.SET(u.get_main_admin_user)) #models.CharField(max_length=200)
+    owner = models.ForeignKey(MyUser, on_delete=models.SET(MyUser.get_user_sentinel_id)) #models.CharField(max_length=200)
 
     def save(self, *args, **kwargs) -> None:
         if not self.slug:
@@ -60,24 +55,38 @@ class Job(models.Model):
         return self.name
 
 
-#TODO make MessageType a model. Add an alternate names field to it. So new ones can be added dynamically. Also, add
-# a foreign key field for it in MessageThread
+class MessageThreadType(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def get_message_type_sentinel_id(): # returns the Unknown Message Type
+        return MessageThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE)
+
+
+class MessageThreadTypeAlternativeName(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    thread_type = models.ForeignKey(MessageThreadType, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
 class MessageThread(models.Model):
     gmail_thread_id = models.CharField(max_length=200)
     job_id = models.ForeignKey(Job, on_delete=models.CASCADE)
 
     subject = models.CharField(max_length=400)
-    class ThreadTypes(models.TextChoices):
-        UNKNOWN = c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
-        RFI = c.FIELD_VALUE_RFI_THREAD_TYPE
 
-    thread_type = models.CharField(
-        max_length=10,
-        choices=ThreadTypes.choices,
-        default=ThreadTypes.UNKNOWN,
-    )
+    thread_type = models.ForeignKey(
+        MessageThreadType, 
+        default=MessageThreadType.get_message_type_sentinel_id, 
+        on_delete=models.SET(MessageThreadType.get_message_type_sentinel_id)
+        )
 
-    time_received = models.DateTimeField(default=timezone.now)
+    time_received = models.DateTimeField()
     due_date = models.DateTimeField()
     
     class ThreadStatus(models.TextChoices):
@@ -91,7 +100,10 @@ class MessageThread(models.Model):
     )
 
     #if the person who started the thread is a Thomas Builders employee we can send them notifications
-    message_thread_initiator = models.ForeignKey(MyUser, on_delete=models.SET(u.get_main_admin_user)) #models.CharField(max_length=200)
+    message_thread_initiator = models.ForeignKey(MyUser, on_delete=models.SET(MyUser.get_user_sentinel_id)) #models.CharField(max_length=200)
+    #If a user is deleted by accident the message_thread_initiator will be set to the first admin user.
+    #To know who was the original owner of the thread save it here
+    original_initiator = models.CharField(max_length=300)
     # blank=True has to be set or the field will be required in any model form
     accepted_answer = models.TextField(default="", blank=True) 
 
@@ -102,6 +114,8 @@ class MessageThread(models.Model):
             self.due_date = timezone.now() + datetime.timedelta(days=7)
         if not self.time_received:
             self.time_received = timezone.now()
+        if not self.original_initiator:
+            self.original_initiator = self.message_thread_initiator.email
         return super().save(*args, **kwargs)
 
     class Meta:

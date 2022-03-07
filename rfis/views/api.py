@@ -90,19 +90,23 @@ def gmail_get_unread_messages(request, *args, **kwargs):
                 continue
             # store message id so these messages can be marked as read later
             service.messages_read.append(g_parser.message_id)
-            job = m.Job.objects.get_or_unknown(g_parser.job_name)
-            time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})
+            time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})          
+            # neither of these two should be created at this point
+            job = m.Job.objects.get(name=g_parser.job_name)
+            message_type = m.MessageThreadType.objects.get(name=g_parser.thread_type)
+            # depending on the settings the user may need to be created
+            user, ucreated = m.MyUser.objects.get_or_create(email=g_parser.fromm)
 
-            message_thread = m.MessageThread.objects.get_or_create(
-                g_parser.thread_id,
+            message_thread, mtcreated = m.MessageThread.objects.get_or_create(
+                gmail_thread_id=g_parser.thread_id,
                 job_id=job,
-                thread_type=g_parser.thread_type,
+                thread_type=message_type,
                 time_received=time_message_received,
                 subject=g_parser.subject,
-                message_thread_initiator=m.MyUser.objects.get_or_create(email=g_parser.fromm)
+                message_thread_initiator=user
             )           
-            message = m.Message.objects.get_or_create(
-                g_parser.message_id,
+            message, mcreated = m.Message.objects.get_or_create(
+                message_id=g_parser.message_id,
                 message_thread_id=message_thread,
                 subject=g_parser.subject,
                 body=g_parser.body,

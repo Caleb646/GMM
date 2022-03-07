@@ -1,8 +1,6 @@
 from django.test import TestCase, Client, override_settings
 import json
 
-from app.app.settings.settings import USE_SSL
-
 from . import constants as c, email_parser as eparser, models as m, gmail_service
 
 class EmailParserTestCase(TestCase):
@@ -44,6 +42,9 @@ class GmailServiceTestCase(TestCase):
     @override_settings(DEBUG="0", USE_SSL="0") # set debug to false to use AWS S3 storage
     def test_save_load_tokens_credentials(self):
         pass
+
+
+    #TODO need a AWS S3 Staging bucket
 
     #TODO need to test gmail api methods. Instead of test the views themselves just test the methods that
     # make up the views. 

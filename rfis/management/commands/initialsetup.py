@@ -10,21 +10,24 @@ import django
 from ... import constants as c, models as m
 
 USERS = [
-    # super users
-    {
-        'email' : settings.ADMIN_EMAIL, 
-        'password' : settings.ADMIN_PASSWORD, 
-        'is_superuser': True, 
-        'is_staff': True, 
-        "is_active": True,
-    },
+        # setup admin users
+        {
+            'email' : email, 
+            'password' : password, 
+            'is_superuser': True, 
+            'is_staff': True, 
+            "is_active": True,
+        } for name, email, password in settings.ADMINS_INFO
+    ]
+
+USERS.append(
     # regulars users
-    {
+     {
         'email' : settings.CRON_USER_NAME, 
         'password' : settings.CRON_USER_PASSWORD, 
         "is_active": True, 
     }
-]
+)
 
 JOBS = [
     {"name" : c.FIELD_VALUE_UNKNOWN_JOB, "start_date" : timezone.now()},
@@ -39,7 +42,7 @@ GROUPS = {
             "dashboard" : ["view"],
             "job" : ["add","delete","change","view"],
             "messagethread" : ["change","view"],
-            "message": ["view"],
+            #"message": ["view"],
         },
     },
     c.GROUP_NAME_RECEIVE_NOTIFICATIONS_USERS: { 
@@ -48,6 +51,11 @@ GROUPS = {
         },
     }
 }
+
+MESSAGE_TYPES = [
+    c.FIELD_VALUE_UNKNOWN_THREAD_TYPE,
+    "RFI",
+]
 
 
 class Command(BaseCommand):
@@ -60,6 +68,7 @@ class Command(BaseCommand):
         self._create_groups()
         self._create_users()
         self._create_jobs()
+        self._create_message_types()
 
     def _create_groups(self):
         """
@@ -91,3 +100,8 @@ class Command(BaseCommand):
         for j in JOBS:
             job, created = m.Job.objects.get_or_create(**j)
             print(f"Job: {j.get('name')} created successfully")
+
+    def _create_message_types(self):
+        for name in MESSAGE_TYPES:
+            mtype, created = m.MessageThreadType.objects.get_or_create(name=name)
+            print(f"Message type: {name} created successfully")

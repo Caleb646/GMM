@@ -4,8 +4,7 @@ from email import parser, message as py_email_message, policy
 from base64 import urlsafe_b64decode
 from bs4 import BeautifulSoup
 
-from .models import MessageThread, Job
-from . import utils as u
+from . import utils as u, models as m, constants as c
 
 ######################################################################################
 # Code was taken from here: https://github.com/zapier/email-reply-parser and modified
@@ -227,11 +226,11 @@ class BaseBodyParser(BaseParser):
 
 class SubjectLineParser(BaseParser):
     RE_FW_PATTERN = re.compile(r'^(RE|Re|FW|FWD|Fw|):?\s')
-    THREAD_TYPE_CHOICES = MessageThread.ThreadTypes.choices
-    
+     
     def __init__(self) -> None:
         super().__init__()
-        self.JOB_NAMES = [j.name for j in Job.objects.all()]
+        self.THREAD_TYPE_CHOICES = [mt.name for mt in m.MessageThreadType.objects.all()]
+        self.JOB_NAMES = [j.name for j in m.Job.objects.all()]
         self._best_subject_line_match = {}
         self._min_score_allowed = 50
 
@@ -251,11 +250,16 @@ class SubjectLineParser(BaseParser):
         self._subject_line = re.sub(self.RE_FW_PATTERN, "", subject_line).strip()
 
     def _choose_thread_type(self):
-        best_match, best_choice, score = u.get_best_match([c for c, _ in self.THREAD_TYPE_CHOICES], self._subject_line.split(" "), lambda x : x.strip().lower())
+        best_match, best_choice, score = u.get_best_match(
+            self.THREAD_TYPE_CHOICES, 
+            self._subject_line.split(" "),
+            lambda x: x.strip().lower(),
+        )
+
         if score > self._min_score_allowed:
             self._chosen["threadType"] = best_match
         else:
-            self._chosen["threadType"] = "Unknown"   
+            self._chosen["threadType"] = c.FIELD_VALUE_UNKNOWN_THREAD_TYPE 
 
     def _choose_job_name(self):
         # TODO could use binary sort to make more efficient

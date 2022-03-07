@@ -23,9 +23,6 @@ def get_users_with_permission(permission_str, include_su=True):
         q |= Q(is_superuser=True)
     return get_user_model().objects.filter(q).distinct()
 
-def get_main_admin_user():
-    return get_user_model().objects.get(email=settings.ADMIN_EMAIL)
-
 def get_best_match(queries: List[str], choices: List[str], string_processor=lambda x : x) -> List[str]:
     assert isinstance(queries, list)
     assert isinstance(choices, list)
@@ -44,7 +41,7 @@ def get_highest_possible_match(match: str, to_match: str, string_processor=lambd
     to_match = string_processor(to_match)
     match = string_processor(match)
     scores = []
-    for i in range(len(to_match)):
+    for _ in range(len(to_match)):
         to_match = to_match[:-1]
         scores.append(fuzz.ratio(match, to_match))
     #print(f"\nun_modified_match: {un_modified_match} to_match: {to_match} scores: {scores}\n")
