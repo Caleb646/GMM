@@ -12,6 +12,7 @@ from . import constants as c, utils as u
 class MyUser(AbstractUser):
     username = None
     email = models.EmailField('email address', unique=True)
+    can_notify = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -68,7 +69,7 @@ class MessageThreadType(models.Model):
 
 class MessageThreadTypeAlternativeName(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    thread_type = models.ForeignKey(MessageThreadType, on_delete=models.CASCADE)
+    thread_type = models.ForeignKey(MessageThreadType, on_delete=models.CASCADE, related_name="thread_type")
 
     def __str__(self):
         return self.name

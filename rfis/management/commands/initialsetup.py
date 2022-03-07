@@ -45,11 +45,11 @@ GROUPS = {
             #"message": ["view"],
         },
     },
-    c.GROUP_NAME_RECEIVE_NOTIFICATIONS_USERS: { 
-        "rfis" : {
-            "notifications": ["receive"]
-        },
-    }
+    # c.GROUP_NAME_RECEIVE_NOTIFICATIONS_USERS: { 
+    #     "rfis" : {
+    #         "notifications": ["receive"]
+    #     },
+    # }
 }
 
 MESSAGE_TYPES = [

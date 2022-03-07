@@ -1,5 +1,5 @@
 #!/bin/sh
-#set -e  # Configure shell so that if one command fails, it exits
-coverage erase
-coverage run manage.py test
-coverage html
+# can use below variable to not use the AWS file storage
+#export TESTING_USE_DEFAULT_STORAGE=1
+# run in testing environment
+python manage.py test --settings=app.settings.testing

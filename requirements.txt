@@ -5,6 +5,7 @@ botocore==1.24.13
 cachetools==5.0.0
 certifi==2021.10.8
 charset-normalizer==2.0.12
+coverage==6.3.2
 dateparser==1.1.0
 dateutils==0.6.12
 dj-database-url==0.5.0
@@ -13,6 +14,7 @@ django-admin-searchable-dropdown==1.2
 django-constance==2.8.0
 django-heroku==0.3.1
 django-picklefield==3.0.1
+django-reverse-admin==2.9.6
 django-storages==1.12.3
 google-api-core==2.5.0
 google-api-python-client==2.37.0
