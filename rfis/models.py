@@ -6,7 +6,7 @@ from django.conf import settings
 import uuid
 
 from .managers import MyUserManager, MessageThreadManager, JobManager, MessageManager
-from . import constants as c, utils as u
+from . import constants as c
 
 
 class MyUser(AbstractUser):

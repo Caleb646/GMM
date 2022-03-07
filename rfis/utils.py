@@ -1,16 +1,56 @@
-from typing import List
+from typing import List, Tuple
 import base64
 import json
 from thefuzz import process, fuzz
+import dateparser
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.conf import settings
 from django.db.models import Q
 
-from constance import config
+from . import models as m
 
+
+def create_db_entry_from_parser(g_parser: 'rfis.email_parser.GmailParser', gmail_message, create_from_any_user=False) -> bool:
+        g_parser.parse(gmail_message)
+        #TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
+        if not create_from_any_user and not get_user_model().objects.filter(email=g_parser.fromm).exists():
+            return False
+        time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})          
+        # neither of these two should be created at this point
+        job = m.Job.objects.get(name=g_parser.job_name)
+        message_type = m.MessageThreadType.objects.get(name=g_parser.thread_type)
+        # depending on the settings the user may need to be created
+        user, ucreated = get_user_model().objects.get_or_create(email=g_parser.fromm)
+
+        message_thread, mtcreated = m.MessageThread.objects.get_or_create(
+            gmail_thread_id=g_parser.thread_id,
+            job_id=job,
+            thread_type=message_type,
+            time_received=time_message_received,
+            subject=g_parser.subject,
+            message_thread_initiator=user
+        )           
+        message, mcreated = m.Message.objects.get_or_create(
+            message_id=g_parser.message_id,
+            message_thread_id=message_thread,
+            subject=g_parser.subject,
+            body=g_parser.body,
+            debug_unparsed_body=g_parser.debug_unparsed_body,
+            fromm=g_parser.fromm,
+            to=g_parser.to,
+            cc=g_parser.cc,
+            time_received=time_message_received
+        )
+        for f_info in g_parser.files_info:
+            attachment, created = m.Attachment.objects.get_or_create(
+                filename=f_info["filename"],
+                gmail_attachment_id=f_info["gmail_attachment_id"],
+                time_received=time_message_received,
+                message_id=message
+            )
+        return True
 
 def get_permission_object(permission_str): # rfis.view_message
     app_label, codename = permission_str.split('.')
@@ -23,7 +63,7 @@ def get_users_with_permission(permission_str, include_su=True):
         q |= Q(is_superuser=True)
     return get_user_model().objects.filter(q).distinct()
 
-def get_best_match(queries: List[str], choices: List[str], string_processor=lambda x : x) -> List[str]:
+def get_best_match(queries: List[str], choices: List[str], string_processor=lambda x : x) -> Tuple[str, str, int]:
     assert isinstance(queries, list)
     assert isinstance(choices, list)
     picks = []
@@ -31,7 +71,9 @@ def get_best_match(queries: List[str], choices: List[str], string_processor=lamb
         ans = process.extractOne(string_processor(c), choices, processor=string_processor)
         picks.append([c, ans[0], ans[1]])
     #print(f"\nqueries: {queries} best match: {max(picks, key=lambda x : x[2])} to_match: {choices}\n")
-    return max(picks, key=lambda x : x[2])
+    if picks:
+        return max(picks, key=lambda x : x[2])
+    return ["", "", 0]
 
 
 def get_highest_possible_match(match: str, to_match: str, string_processor=lambda x : x) -> int:

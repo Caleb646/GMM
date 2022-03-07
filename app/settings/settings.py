@@ -143,7 +143,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 USE_SSL = bool(int(os.getenv("USE_SSL", default="1"))) # default to true
 
-#TODO uncomment. These settings are causing problems
 # CORS_REPLACE_HTTPS_REFERER      = not DEBUG
 # HOST_SCHEME                     = "https://" if not DEBUG else "http://"
 # SECURE_PROXY_SSL_HEADER         = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else ()

@@ -6,7 +6,6 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from admin_searchable_dropdown.filters import AutocompleteFilter
-from django_reverse_admin import ReverseModelAdmin
 
 from . import forms as f, models as m, views as v
 

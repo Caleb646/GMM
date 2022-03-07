@@ -33,7 +33,6 @@ class MyUserManager(BaseUserManager):
         return self.create_user(email, password, **kwargs)
 
     def get_or_create(self, **kwargs):
-        print("get or create user")
         if self.filter(email=kwargs.get("email")).exists():
             return (self.get(email=kwargs.get("email")), False)
         # if password isnt present set it to a random one

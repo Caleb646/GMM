@@ -75,57 +75,12 @@ def gmail_get_unread_messages(request, *args, **kwargs):
             if current_count > max_count_before_sleep:
                 current_count = 0
                 sleep(0.25)
-
-            #print(f"\n\nraw gmail msg:\t {msg}\n\n")
-            g_parser.parse(msg)
-
-            #print(f"\nmessage data: {g_parser.format_test_data('')}\n")
-
-            #if not m.Message.objects.filter(message_id=g_parser.message_id).exists():
-                # TODO keep commented out unless getting test data
-                #create_test_data(msg, g_parser.format_test_data(), "gmail_test_data.json")
-
-            #TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
-            if not m.MyUser.objects.filter(email=g_parser.fromm).exists():
-                continue
-            # store message id so these messages can be marked as read later
-            service.messages_read.append(g_parser.message_id)
-            time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})          
-            # neither of these two should be created at this point
-            job = m.Job.objects.get(name=g_parser.job_name)
-            message_type = m.MessageThreadType.objects.get(name=g_parser.thread_type)
-            # depending on the settings the user may need to be created
-            user, ucreated = m.MyUser.objects.get_or_create(email=g_parser.fromm)
-
-            message_thread, mtcreated = m.MessageThread.objects.get_or_create(
-                gmail_thread_id=g_parser.thread_id,
-                job_id=job,
-                thread_type=message_type,
-                time_received=time_message_received,
-                subject=g_parser.subject,
-                message_thread_initiator=user
-            )           
-            message, mcreated = m.Message.objects.get_or_create(
-                message_id=g_parser.message_id,
-                message_thread_id=message_thread,
-                subject=g_parser.subject,
-                body=g_parser.body,
-                debug_unparsed_body=g_parser.debug_unparsed_body,
-                fromm=g_parser.fromm,
-                to=g_parser.to,
-                cc=g_parser.cc,
-                time_received=time_message_received
-            )
-            for f_info in g_parser.files_info:
-                attachment, created = m.Attachment.objects.get_or_create(
-                    filename=f_info["filename"],
-                    gmail_attachment_id=f_info["gmail_attachment_id"],
-                    time_received=time_message_received,
-                    message_id=message
-                )
+            created = u.create_db_entry_from_parser(g_parser, msg)
+            if created:
+                service.messages_read.append(g_parser.message_id)
     #TODO uncomment
     service.mark_read_messages()
-    return JsonResponse({c.JSON_RESPONSE_MSG_KEY : "Messages were added successfully."}, status=200)
+    return JsonResponse({c.JSON_RESPONSE_MSG_KEY : f"{len(service.messages_read)} messages were added successfully."}, status=200)
    
 @u.logged_in_or_basicauth()
 def notify_users_of_open_messages(request, *args, **kwargs):
