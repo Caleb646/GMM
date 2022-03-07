@@ -43,14 +43,15 @@ class GmailOAuthCallback(View):
         # verified in the authorization server response.  
         state = request.session.get(c.GMAIL_API_SESSION_STATE_FIELDNAME)
         #.GET returns the url query parameters as a key,value dict
-        url_params = request.GET
+        state_to_match = request.GET.get(c.GMAIL_API_SESSION_STATE_FIELDNAME)
         #if states dont match throw an error
-        if state != url_params.get(c.GMAIL_API_SESSION_STATE_FIELDNAME) and state and url_params.get(c.GMAIL_API_SESSION_STATE_FIELDNAME):
-            return HttpResponse("States do not match", status=401)
+        #print(f"google state: {state}\n\nmy state: {state_to_match}")
+        # if state != state_to_match and state and state_to_match:
+        #     return HttpResponse("States do not match", status=401)
 
         flow = Flow.from_client_config(gmail_service.GmailService.load_client_secret_config_f_file(), scopes=c.GMAIL_API_SCOPES, state=state)
         flow.redirect_uri = c.GMAIL_REDIRECT_URI
         # Use the authorization server's response to fetch the OAuth 2.0 tokens.
-        flow.fetch_token(code=url_params["code"])
+        flow.fetch_token(code=request.GET["code"])
         gmail_service.GmailService.save_client_token(flow.credentials)     
         return redirect(reverse("admin:login"))

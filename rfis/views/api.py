@@ -84,7 +84,7 @@ def gmail_get_unread_messages(request, *args, **kwargs):
    
 @u.logged_in_or_basicauth()
 def notify_users_of_open_messages(request, *args, **kwargs):
-    #TODO only users with the receive notifications permission are sent an email.
+    #TODO only users with the can_notify will receive an email.
     # may need to change this with a setting in the future
     all_users = m.MyUser.objects.filter(can_notify=True) #u.get_users_with_permission("rfis.receive_notifications", include_su=False) 
     messages = []
