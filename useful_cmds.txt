@@ -1,0 +1,2 @@
+wipe heroku database -> heroku pg:reset DATABASE_URL --confirm app_name
+deploy app to staging enviroment -> git push heroku-staging branch_name

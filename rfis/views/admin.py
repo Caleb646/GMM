@@ -28,6 +28,9 @@ class GmailAuthorize(LoginRequiredMixin, View):
         # error.
         flow.redirect_uri = c.GMAIL_REDIRECT_URI
         authorization_url, state = flow.authorization_url(
+            # this forces oauth to return a refresh token on each sign in
+            prompt="consent",
+            #approval_prompt="force",
             # Enable offline access so that you can refresh an access token without
             # re-prompting the user for permission. Recommended for web server apps.
             access_type='offline',
@@ -53,5 +56,6 @@ class GmailOAuthCallback(View):
         flow.redirect_uri = c.GMAIL_REDIRECT_URI
         # Use the authorization server's response to fetch the OAuth 2.0 tokens.
         flow.fetch_token(code=request.GET["code"])
+        assert flow.credentials.refresh_token, "Refresh token has to be present"
         gmail_service.GmailService.save_client_token(flow.credentials)     
         return redirect(reverse("admin:login"))
