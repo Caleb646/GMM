@@ -9,13 +9,32 @@ from django.urls import reverse
 from django.core.mail import send_mass_mail, send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.contrib.auth import get_user_model
+from django.core import serializers
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from constance import config
 
 from .. import constants as c, models as m, utils as u, gmail_service as g_service, email_parser as e_parser
 
 
-class AttachmentDownloadView(View):
+class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        thread = m.MessageThread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
+        messages = m.Message.objects.filter(message_thread_id=thread)
+        data = serializers.serialize(
+                "json", 
+                messages, 
+                fields=("fromm", "to", "cc", "time_received", "body")
+            )
+
+        return JsonResponse({c.JSON_RESPONSE_MSG_KEY : "Messages retrieved successfully", "data" : data}, status=200)
+
+    def test_func(self):
+        return True
+
+class AttachmentDownloadView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         message = m.Message.objects.get(message_id=kwargs["message_id"])
@@ -29,6 +48,7 @@ class AttachmentDownloadView(View):
                 'Content-Type': 'application/vnd.ms-excel',
                 'Content-Disposition': f"attachment; filename={attachment.filename}",
             },
+            status=200
         )
 
 @login_required
@@ -81,16 +101,19 @@ def gmail_get_unread_messages(request, *args, **kwargs):
     #TODO uncomment
     service.mark_read_messages()
     return JsonResponse({c.JSON_RESPONSE_MSG_KEY : f"{len(service.messages_read)} messages were added successfully."}, status=200)
+
    
 @u.logged_in_or_basicauth()
 def notify_users_of_open_messages(request, *args, **kwargs):
     #TODO only users with the can_notify will receive an email.
     # may need to change this with a setting in the future
-    all_users = m.MyUser.objects.filter(can_notify=True) #u.get_users_with_permission("rfis.receive_notifications", include_su=False) 
+    all_users = get_user_model().objects.filter(can_notify=True) #u.get_users_with_permission("rfis.receive_notifications", include_su=False) 
     messages = []
     for user in all_users:
-        user_dashboard, created = m.Dashboard.objects.get_or_create(owner=user)
         total_open_messages = m.MessageThread.objects.filter(message_thread_initiator=user).count()
+        if total_open_messages == 0: # only send an email to users with open messages
+            continue
+        user_dashboard, created = m.Dashboard.objects.get_or_create(owner=user)
         ctx = {
             "open_message_count": total_open_messages, 
             "dashboard_link": settings.DOMAIN_URL + reverse("dashboard_detailed", args=[user_dashboard.slug])

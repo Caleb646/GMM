@@ -47,6 +47,11 @@ class Job(models.Model):
     class Meta:
         ordering = ["start_date"]
 
+    @staticmethod
+    def get_job_sentinel_id():
+        return Job.objects.get(name=c.FIELD_VALUE_UNKNOWN_JOB)
+
+
     def save(self, *args, **kwargs):
         if not self.start_date:
             self.start_date = timezone.now()
@@ -76,8 +81,8 @@ class MessageThreadTypeAlternativeName(models.Model):
 
 
 class MessageThread(models.Model):
-    gmail_thread_id = models.CharField(max_length=200)
-    job_id = models.ForeignKey(Job, on_delete=models.CASCADE)
+    gmail_thread_id = models.CharField(max_length=200, unique=True)
+    job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id))
 
     subject = models.CharField(max_length=400)
 
@@ -125,7 +130,7 @@ class MessageThread(models.Model):
     def __str__(self):
         return self.subject
 class Message(models.Model):
-    message_id = models.CharField(max_length=200)
+    message_id = models.CharField(max_length=200, unique=True)
     message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)
     subject = models.CharField(max_length=400)
     body = models.TextField(default="")

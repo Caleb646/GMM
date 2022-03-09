@@ -33,8 +33,8 @@ class MyUserManager(BaseUserManager):
         return self.create_user(email, password, **kwargs)
 
     def get_or_create(self, **kwargs):
-        if self.filter(email=kwargs.get("email")).exists():
-            return (self.get(email=kwargs.get("email")), False)
+        if user := self.filter(email=kwargs.get("email")):
+            return (user, False)
         # if password isnt present set it to a random one
         kwargs.setdefault("password", str(uuid.uuid4()))
         return (self.create_user(**kwargs), True)
@@ -47,32 +47,29 @@ class MyUserManager(BaseUserManager):
 class JobManager(BaseUserManager):
 
     def get_or_unknown(self, **kwargs):
-        name = kwargs.get("name")   
-        if self.all().filter(name=name).exists():
-            return self.get(name=name)
+        if job := self.filter(name=kwargs.get("name")):
+            return job
         return self.get(name=c.FIELD_VALUE_UNKNOWN_JOB)   
 
     def get_or_create(self, **kwargs):
-        if self.filter(name=kwargs.get("name")).exists():
-            return (self.get(name=kwargs.get("name")), False)
+        if job := self.filter(name=kwargs.get("name")):
+            return (job, False)
         return (self.create(**kwargs), True)    
 
         
 class MessageThreadManager(BaseUserManager):
 
     def get_or_create(self, **kwargs):
-        gmail_thread_id = kwargs.get("gmail_thread_id")       
-        if self.all().filter(gmail_thread_id=gmail_thread_id).exists():
-            return (self.get(gmail_thread_id=gmail_thread_id), False)
+        if thread := self.filter(gmail_thread_id=kwargs.get("gmail_thread_id")):
+            return (thread, False)
         return (self.create(**kwargs), True)
         
 
 class MessageManager(BaseUserManager):
 
     def get_or_create(self, **kwargs):       
-        message_id = kwargs.get("message_id")
-        if self.all().filter(message_id=message_id).exists():
-            return (self.get(message_id=message_id), False)
+        if message := self.filter(message_id=kwargs.get("message_id")):
+            return (message, False)
         return (self.create(**kwargs), True)
 
 

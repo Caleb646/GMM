@@ -17,6 +17,11 @@ CRON_USER_NAME = os.environ["CRON_USER_NAME"]
 CRON_USER_PASSWORD = os.environ["CRON_USER_PASSWORD"]
 
 
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

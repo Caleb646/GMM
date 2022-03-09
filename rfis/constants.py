@@ -18,3 +18,5 @@ JSON_RESPONSE_MSG_KEY = "response_msg"
 
 GROUP_NAME_STAFF_USERS = "Staff"
 GROUP_NAME_RECEIVE_NOTIFICATIONS_USERS = "Receive Notifications"
+
+COOKIE_NAME_DASHBOARD_SLUG = "dashboard_slug"

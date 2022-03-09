@@ -9,8 +9,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.db.models import Q
 
-from . import models as m
+from . import models as m, constants as c
 
+
+def can_see_dashboard(user):
+    return user.super_user or user.has_perm("rfis.view_dashboard")
 
 def create_db_entry_from_parser(g_parser: 'rfis.email_parser.GmailParser', gmail_message, create_from_any_user=False) -> bool:
         g_parser.parse(gmail_message)
@@ -54,7 +57,9 @@ def create_db_entry_from_parser(g_parser: 'rfis.email_parser.GmailParser', gmail
 
 def get_permission_object(permission_str): # rfis.view_message
     app_label, codename = permission_str.split('.')
-    return Permission.objects.filter(content_type__app_label=app_label, codename=codename).first()
+    perm = Permission.objects.filter(content_type__app_label=app_label, codename=codename).first()
+    assert perm, "Permission cannot be none"
+    return perm
 
 def get_users_with_permission(permission_str, include_su=True):
     permission_obj = get_permission_object(permission_str)
@@ -105,6 +110,7 @@ def save_test_data_from_raw_gmail_message(raw_gmail_message, parsed_message, fil
 #           Taken from https://www.djangosnippets.org/snippets/243/ and modified
 ###############################################################################################
 
+
 def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     """
     This is a helper function used by both 'logged_in_or_basicauth' and
@@ -148,6 +154,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     
 #############################################################################
 #
+
 def logged_in_or_basicauth(realm = ""):
     """
     A simple decorator that requires a user to be logged in. If they are not

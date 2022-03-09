@@ -11,8 +11,8 @@
     <div class="">
         {% if request.user.is_authenticated %}
             <a href="{% url 'admin:index' %}">Home</a>
-        {% endif %}
-        <a href="#" class="">Help</a>
+            <a href="#" class="">Help</a>
+        {% endif %}       
     </div>
 {% endblock %}
 

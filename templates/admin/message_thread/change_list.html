@@ -20,7 +20,14 @@
       function refresh_threads(url) {
           fetch(url, {
             method: 'GET'
-          }).then(response => location.reload()); 
+          }).then(response => {
+              if(!response.ok) {
+                  alert(response.statusText);
+              }
+              location.reload()
+            }).catch(error => {
+                alert(error);
+            }); 
       };
   </script> 
 {% endblock %}

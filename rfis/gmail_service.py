@@ -37,7 +37,7 @@ class GmailService():
     @staticmethod
     def load_client_secret_config_f_file():
         head, tail = os.path.split(config.GMAIL_WEB_CLIENT_SECRET)
-        assert default_storage.exists(name=tail)
+        assert default_storage.exists(name=tail), f"filename: {tail}"
         if isinstance(default_storage, S3Boto3Storage):
             file: S3Boto3StorageFile = default_storage.open(tail, "rb")
             data = json.load(file)

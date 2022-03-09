@@ -10,8 +10,9 @@ class MessageThreadFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queryset = kwargs.get("queryset", m.MessageThread.objects.all())
-        self.fields = kwargs.get("fields", ("job_id", "subject", "accepted_answer", "time_received", "thread_type", "thread_status"))
+        self.fields = kwargs.get("fields", ('gmail_thread_id', "job_id", "subject", "accepted_answer", "time_received", "thread_type", "thread_status"))
         self.widgets = kwargs.get("widgets", {
+                    'gmail_thread_id': forms.HiddenInput(attrs={'required':False}), # adds a hidden field for js ids
                     'accepted_answer': forms.Textarea(attrs={'rows':2, 'cols':35}),
                     'subject': forms.Textarea(attrs={'rows':2, 'cols':35, 'readonly': 'readonly'}),
                     'time_received': forms.DateTimeInput(attrs={'readonly': 'readonly'}, format='%m/%d/%y %H:%M')
