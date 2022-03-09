@@ -17,7 +17,7 @@ class HomeView(LoginRequiredMixin, View):
 
 
 class DashboardView(LoginRequiredMixin, UserPassesTestMixin, View):
-    template_name = 'message_manager/dashboard/detailed.html'
+    template_name = 'message_manager/message_log/detailed.html'
 
     def get(self, request, *args, **kwargs):
         dashboard = get_object_or_404(m.MessageLog, slug=kwargs["slug"])

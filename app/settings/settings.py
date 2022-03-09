@@ -128,7 +128,11 @@ AUTH_USER_MODEL = 'rfis.MyUser'
 ADMINS_INFO = [(ainfo.split(",")[0], ainfo.split(",")[1], ainfo.split(",")[2]) for ainfo in os.environ["ADMINS"].split("|") if ainfo != ""]
 # needed for the AdminEmailHandler to work
 ADMINS =  [(name, email) for name, email, password in ADMINS_INFO]
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True

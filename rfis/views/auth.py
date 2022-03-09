@@ -1,7 +1,9 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
+from django.contrib.auth.views import PasswordResetView
+from django.contrib.messages.views import SuccessMessageMixin
 
 from .. import forms as f
 
@@ -25,3 +27,14 @@ class LoginView(View):
             login_form.add_error("username", "Username or password was incorrect.")
 
         return render(request, self.template_name, {"form" : login_form})
+
+
+class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
+    template_name = 'auth/reset_password.html'
+    email_template_name = 'email_notifications/reset_password.html'
+    subject_template_name = 'email_notifications/reset_password.txt'
+    success_message = "We've emailed you instructions for setting your password, " \
+                      "if an account exists with the email you entered. You should receive them shortly." \
+                      " If you don't receive an email, " \
+                      "please make sure you've entered the address you registered with, and check your spam folder."
+    success_url = reverse_lazy('base_user_reset_password')

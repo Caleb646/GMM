@@ -2,14 +2,14 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from google_auth_oauthlib.flow import Flow
 
 from .. import constants as c, models as m, gmail_service
 
 
-class MessageThreadDetailedView(LoginRequiredMixin, View):
+class MessageThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'admin/message_thread/detailed.html'
 
     def get(self, request, *args, **kwargs):
@@ -18,7 +18,10 @@ class MessageThreadDetailedView(LoginRequiredMixin, View):
         attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
         return render(request, self.template_name, {"my_messages" : messages, "my_attachments" : attachments})
 
-class GmailAuthorize(LoginRequiredMixin, View):
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.is_staff
+
+class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, format=None):
         # If modifying these scopes
         flow = Flow.from_client_config(gmail_service.GmailService.load_client_secret_config_f_file(), scopes=c.GMAIL_API_SCOPES)
@@ -38,6 +41,9 @@ class GmailAuthorize(LoginRequiredMixin, View):
             include_granted_scopes='true')
         request.session[c.GMAIL_API_SESSION_STATE_FIELDNAME] = state
         return redirect(authorization_url)
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.is_staff
 
 class GmailOAuthCallback(View):
 
