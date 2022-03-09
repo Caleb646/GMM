@@ -229,7 +229,7 @@ class SubjectLineParser(BaseParser):
      
     def __init__(self) -> None:
         super().__init__()
-        self.THREAD_TYPE_CHOICES = [mt.name for mt in m.MessageThreadType.objects.all()]
+        self.THREAD_TYPE_CHOICES = [mt.name for mt in m.ThreadType.objects.all()]
         self.JOB_NAMES = [j.name for j in m.Job.objects.all()]
         self._best_subject_line_match = {}
         self._min_score_allowed = 50

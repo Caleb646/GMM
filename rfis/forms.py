@@ -25,10 +25,10 @@ class MyUserChangeForm(UserChangeForm):
 
 class DashboardCreateForm(forms.ModelForm):
     class Meta: 
-       model = m.Dashboard
+       model = m.MessageLog
        fields = ['owner']
 
 class DashboardChangeForm(forms.ModelForm):
     class Meta: 
-       model = m.Dashboard
+       model = m.MessageLog
        fields = ['owner']

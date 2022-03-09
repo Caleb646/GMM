@@ -51,12 +51,12 @@ class DashboardAdmin(admin.ModelAdmin):
     add_form = f.DashboardCreateForm
     form = f.DashboardChangeForm
 
-    def detailed_view_button(self, object: m.Dashboard):
+    def detailed_view_button(self, object: m.MessageLog):
         return format_html(
             f"<a href={reverse('dashboard_detailed', args=[object.slug])}>View</a>", 
         )
 
-    def resend_button(self, object: m.Dashboard):
+    def resend_button(self, object: m.MessageLog):
         return format_html(
             f"<a href=javascript:fetch('{reverse('dashboard_resend', args=[object.slug])}')>Resend</a>", 
         )
@@ -68,7 +68,7 @@ class JobAdmin(admin.ModelAdmin):
 
 
 class MessageThreadTypeAlternativeNameInline(admin.StackedInline):
-    model = m.MessageThreadTypeAlternativeName
+    model = m.ThreadTypeAltName
     extra = 0
 
 
@@ -108,7 +108,7 @@ class MessageThreadAdmin(admin.ModelAdmin):
 
     change_list_template = "admin/message_thread/change_list.html"
 
-    def detailed_view_button(self, object: m.MessageThread):
+    def detailed_view_button(self, object: m.Thread):
         return format_html(
             f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>", 
         )
@@ -149,22 +149,22 @@ class PermissionAdmin(admin.ModelAdmin):
 admin.site.site_header = "Dashboard"
 admin.site.site_title = "Dashboard"
 admin.site.register(m.MyUser, MyUserAdmin)
-admin.site.register(m.Dashboard, DashboardAdmin)
+admin.site.register(m.MessageLog, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
-admin.site.register(m.MessageThreadType, MessageThreadTypeAdmin)
-#admin.site.register(m.MessageThreadTypeAlternativeName, MessageThreadTypeAlternativeNameAdmin)
-admin.site.register(m.MessageThread, MessageThreadAdmin)
+admin.site.register(m.ThreadType, MessageThreadTypeAdmin)
+#admin.site.register(m.ThreadTypeAltName, MessageThreadTypeAlternativeNameAdmin)
+admin.site.register(m.Thread, MessageThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
 
 admin.site.register(Permission, PermissionAdmin)
 
 # admin_site = MyAdminSite()
-# admin_site.site_header = "Dashboard"
-# admin_site.site_title = "Dashboard"
+# admin_site.site_header = "MessageLog"
+# admin_site.site_title = "MessageLog"
 # admin_site.register(MyUser, MyUserAdmin)
 # admin_site.register(Job, JobAdmin)
-# admin_site.register(MessageThread, MessageThreadAdmin)
+# admin_site.register(Thread, MessageThreadAdmin)
 # admin_site.register(Message)
 # admin_site.register(Attachment)
 

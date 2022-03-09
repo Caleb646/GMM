@@ -20,7 +20,7 @@ def create_dashboards():
     users = get_user_model().objects.all()
     ret = []
     for u in users:
-        dashboard, created =  m.Dashboard.objects.get_or_create(owner=u)
+        dashboard, created =  m.MessageLog.objects.get_or_create(owner=u)
         ret.append(dashboard)
     return ret
 
@@ -30,9 +30,9 @@ def create_threads_w_n_max_messages(n):
     num_msgs = random.randrange(0, n)
     for u in users:
         job = return_random_model_instance(m.Job)
-        thread_type = return_random_model_instance(m.MessageThreadType)
+        thread_type = return_random_model_instance(m.ThreadType)
 
-        thread, created = m.MessageThread.objects.get_or_create(
+        thread, created = m.Thread.objects.get_or_create(
             gmail_thread_id=str(uuid.uuid4()),
             job_id=job,
             subject=str(uuid.uuid4()),
@@ -68,8 +68,8 @@ def create_default_db_entries():
             "Test Job" : m.Job.objects.get_or_create(name="Test Job"),
         },
         "thread_types" : {
-            "1" : m.MessageThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE),
-            "2" : m.MessageThreadType.objects.get_or_create(name="RFI")
+            "1" : m.ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE),
+            "2" : m.ThreadType.objects.get_or_create(name="RFI")
         },
         "dashboards" : create_dashboards(), # list of dashboard objects
         "threads" : create_threads_w_n_max_messages(10), # list of thread objects
@@ -169,10 +169,10 @@ class ApiTestCase(TestCase):
             m.Message.objects.get(message_id=message_id)
 
     def test_get_messages_for_thread(self):
-        threads = m.MessageThread.objects.all()
+        threads = m.Thread.objects.all()
         for thread in threads:
             messages_count = m.Message.objects.filter(message_thread_id=thread).count()
-            dashboard = m.Dashboard.objects.get(owner=thread.message_thread_initiator)
+            dashboard = m.MessageLog.objects.get(owner=thread.message_thread_initiator)
             url = reverse("api_get_all_thread_messages", args=[thread.gmail_thread_id])
 
             # unauthenticated user should get redirected
@@ -207,11 +207,11 @@ class MessageManagerTestCase(TestCase):
         self.defaults = create_default_db_entries()
 
     def test_dashboard_view(self):
-        dashboards = m.Dashboard.objects.all()
+        dashboards = m.MessageLog.objects.all()
 
         for dash in dashboards:
             url = reverse("dashboard_detailed", args=[dash.slug])
-            threads = m.MessageThread.objects.filter(message_thread_initiator=dash.owner)
+            threads = m.Thread.objects.filter(message_thread_initiator=dash.owner)
 
             # unauthenticated user should get redirected
             response = self.client.get(url)

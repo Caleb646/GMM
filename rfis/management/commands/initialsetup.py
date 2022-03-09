@@ -103,5 +103,5 @@ class Command(BaseCommand):
 
     def _create_message_types(self):
         for name in MESSAGE_TYPES:
-            mtype, created = m.MessageThreadType.objects.get_or_create(name=name)
+            mtype, created = m.ThreadType.objects.get_or_create(name=name)
             print(f"Message type: {name} created successfully")

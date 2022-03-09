@@ -28,7 +28,7 @@ class MyUser(AbstractUser):
         return self.email
 
 
-class Dashboard(models.Model):
+class MessageLog(models.Model):
     slug = models.SlugField(unique=True)
     # on delete will set the owner to be the main admin specified in the .env file
     owner = models.ForeignKey(MyUser, on_delete=models.SET(MyUser.get_user_sentinel_id)) #models.CharField(max_length=200)
@@ -61,7 +61,7 @@ class Job(models.Model):
         return self.name
 
 
-class MessageThreadType(models.Model):
+class ThreadType(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
@@ -69,27 +69,27 @@ class MessageThreadType(models.Model):
 
     @staticmethod
     def get_message_type_sentinel_id(): # returns the Unknown Message Type
-        return MessageThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE)
+        return ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE)
 
 
-class MessageThreadTypeAlternativeName(models.Model):
+class ThreadTypeAltName(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    thread_type = models.ForeignKey(MessageThreadType, on_delete=models.CASCADE, related_name="thread_type")
+    thread_type = models.ForeignKey(ThreadType, on_delete=models.CASCADE, related_name="thread_type")
 
     def __str__(self):
         return self.name
 
 
-class MessageThread(models.Model):
+class Thread(models.Model):
     gmail_thread_id = models.CharField(max_length=200, unique=True)
     job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id))
 
     subject = models.CharField(max_length=400)
 
     thread_type = models.ForeignKey(
-        MessageThreadType, 
-        default=MessageThreadType.get_message_type_sentinel_id, 
-        on_delete=models.SET(MessageThreadType.get_message_type_sentinel_id)
+        ThreadType, 
+        default=ThreadType.get_message_type_sentinel_id, 
+        on_delete=models.SET(ThreadType.get_message_type_sentinel_id)
         )
 
     time_received = models.DateTimeField()
@@ -131,7 +131,7 @@ class MessageThread(models.Model):
         return self.subject
 class Message(models.Model):
     message_id = models.CharField(max_length=200, unique=True)
-    message_thread_id = models.ForeignKey(MessageThread, on_delete=models.CASCADE)
+    message_thread_id = models.ForeignKey(Thread, on_delete=models.CASCADE)
     subject = models.CharField(max_length=400)
     body = models.TextField(default="")
     debug_unparsed_body = models.TextField(default="")

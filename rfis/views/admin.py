@@ -13,7 +13,7 @@ class MessageThreadDetailedView(LoginRequiredMixin, View):
     template_name = 'admin/message_thread/detailed.html'
 
     def get(self, request, *args, **kwargs):
-        message_thread = m.MessageThread.objects.get(pk=kwargs["pk"])
+        message_thread = m.Thread.objects.get(pk=kwargs["pk"])
         messages = m.Message.objects.filter(message_thread_id=message_thread)
         attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
         return render(request, self.template_name, {"my_messages" : messages, "my_attachments" : attachments})

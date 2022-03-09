@@ -23,11 +23,11 @@ def create_db_entry_from_parser(g_parser: 'rfis.email_parser.GmailParser', gmail
         time_message_received = dateparser.parse(g_parser.date, settings={'TIMEZONE': 'US/Eastern', 'RETURN_AS_TIMEZONE_AWARE': True})          
         # neither of these two should be created at this point
         job = m.Job.objects.get(name=g_parser.job_name)
-        message_type = m.MessageThreadType.objects.get(name=g_parser.thread_type)
+        message_type = m.ThreadType.objects.get(name=g_parser.thread_type)
         # depending on the settings the user may need to be created
         user, ucreated = get_user_model().objects.get_or_create(email=g_parser.fromm)
 
-        message_thread, mtcreated = m.MessageThread.objects.get_or_create(
+        message_thread, mtcreated = m.Thread.objects.get_or_create(
             gmail_thread_id=g_parser.thread_id,
             job_id=job,
             thread_type=message_type,

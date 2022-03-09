@@ -21,7 +21,7 @@ from .. import constants as c, models as m, utils as u, gmail_service as g_servi
 class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
-        thread = m.MessageThread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
+        thread = m.Thread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
         messages = m.Message.objects.filter(message_thread_id=thread)
         data = serializers.serialize(
                 "json", 
@@ -53,8 +53,8 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
 
 @login_required
 def resend_dashboard_link(request, *args, **kwargs):
-    dashboard = m.Dashboard.objects.get(slug=kwargs["slug"])
-    total_open_messages = m.MessageThread.objects.filter(message_thread_initiator=dashboard.owner).count()
+    dashboard = m.MessageLog.objects.get(slug=kwargs["slug"])
+    total_open_messages = m.Thread.objects.filter(message_thread_initiator=dashboard.owner).count()
     ctx = {
         "open_message_count": total_open_messages, 
         "dashboard_link": settings.DOMAIN_URL + reverse("dashboard_detailed", args=[dashboard.slug])
@@ -110,10 +110,10 @@ def notify_users_of_open_messages(request, *args, **kwargs):
     all_users = get_user_model().objects.filter(can_notify=True) #u.get_users_with_permission("rfis.receive_notifications", include_su=False) 
     messages = []
     for user in all_users:
-        total_open_messages = m.MessageThread.objects.filter(message_thread_initiator=user).count()
+        total_open_messages = m.Thread.objects.filter(message_thread_initiator=user).count()
         if total_open_messages == 0: # only send an email to users with open messages
             continue
-        user_dashboard, created = m.Dashboard.objects.get_or_create(owner=user)
+        user_dashboard, created = m.MessageLog.objects.get_or_create(owner=user)
         ctx = {
             "open_message_count": total_open_messages, 
             "dashboard_link": settings.DOMAIN_URL + reverse("dashboard_detailed", args=[user_dashboard.slug])

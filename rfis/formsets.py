@@ -9,7 +9,7 @@ class MessageThreadFormSet(BaseModelFormSet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.queryset = kwargs.get("queryset", m.MessageThread.objects.all())
+        self.queryset = kwargs.get("queryset", m.Thread.objects.all())
         self.fields = kwargs.get("fields", ('gmail_thread_id', "job_id", "subject", "accepted_answer", "time_received", "thread_type", "thread_status"))
         self.widgets = kwargs.get("widgets", {
                     'gmail_thread_id': forms.HiddenInput(attrs={'required':False}), # adds a hidden field for js ids
@@ -45,7 +45,7 @@ class MessageThreadFormSet(BaseModelFormSet):
 
     def create_model_formset(self, request_post=None, request_files=None):
         ThreadsFormset = forms.modelformset_factory(
-            m.MessageThread,
+            m.Thread,
             formset=MessageThreadFormSet,
             fields=self.fields,
             widgets=self.widgets,

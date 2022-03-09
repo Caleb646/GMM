@@ -20,9 +20,9 @@ class DashboardView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'message_manager/dashboard/detailed.html'
 
     def get(self, request, *args, **kwargs):
-        dashboard = get_object_or_404(m.Dashboard, slug=kwargs["slug"])
-        formset = f_sets.MessageThreadFormSet(queryset=m.MessageThread.objects.filter(
-            thread_status=m.MessageThread.ThreadStatus.OPEN, 
+        dashboard = get_object_or_404(m.MessageLog, slug=kwargs["slug"])
+        formset = f_sets.MessageThreadFormSet(queryset=m.Thread.objects.filter(
+            thread_status=m.Thread.ThreadStatus.OPEN, 
             message_thread_initiator=dashboard.owner)).create_model_formset()
         return render(request, self.template_name, {"formset" : formset})
 
@@ -40,6 +40,6 @@ class DashboardView(LoginRequiredMixin, UserPassesTestMixin, View):
         if self.request.user.has_perm("rfis.view_dashboard"):
             return True
         # the owner of the dashboard needs to match the request user
-        if m.Dashboard.objects.get(slug=self.kwargs["slug"]).owner == self.request.user:
+        if m.MessageLog.objects.get(slug=self.kwargs["slug"]).owner == self.request.user:
             return True
         return False
