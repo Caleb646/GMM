@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
@@ -9,8 +9,9 @@ from google_auth_oauthlib.flow import Flow
 from .. import constants as c, models as m, gmail_service
 
 
-class MessageThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'admin/message_thread/detailed.html'
+    login_url = reverse_lazy("admin:login")
 
     def get(self, request, *args, **kwargs):
         message_thread = m.Thread.objects.get(pk=kwargs["pk"])
@@ -42,8 +43,8 @@ class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
         request.session[c.GMAIL_API_SESSION_STATE_FIELDNAME] = state
         return redirect(authorization_url)
 
-    def test_func(self):
-        return self.request.user.is_superuser or self.request.user.is_staff
+    def test_func(self): # only super users can change the gmail credentials
+        return self.request.user.is_superuser# or self.request.user.is_staff
 
 class GmailOAuthCallback(View):
 

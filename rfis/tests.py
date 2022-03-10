@@ -1,7 +1,8 @@
 from django.test import TestCase, Client, override_settings
-from django.urls import reverse
-from django.contrib.auth import get_user_model, login, logout
+from django.urls import reverse, reverse_lazy
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+from urllib.parse import urljoin
 import json
 import base64
 import uuid
@@ -11,6 +12,38 @@ import random
 from google.oauth2.credentials import Credentials
 
 from . import constants as c, email_parser as eparser, models as m, gmail_service, utils as u
+
+PASSWORD = '1234'
+ADMIN_LOGIN = reverse_lazy("admin:login")
+USER_LOGIN = reverse_lazy("base_user_login")
+client = Client()
+
+def email_password_to_http_auth(email):
+    return base64.b64encode(bytes(f'{email}:{PASSWORD}', 'utf8')).decode('utf8')
+
+def auth_check(url, email, status_code):   
+    client.login(email=email, password=PASSWORD)
+    response = client.get(url, follow=True)
+    client.logout()
+    if response.redirect_chain:
+        assert any(status_code in route for route in response.redirect_chain), f"Redirect chain {response.redirect_chain} != Target code: {status_code} on {url}"  
+    else:
+        assert response.status_code == status_code, f"Response code {response.status_code} != Target code: {status_code} on {url}"  
+    return response
+
+def basic_auth_check(url, email, status_code):
+    client.defaults['HTTP_AUTHORIZATION'] = f"Basic {email_password_to_http_auth(email)}"
+    response = client.get(url, follow=True)
+    client.defaults['HTTP_AUTHORIZATION'] = SimpleCookie()
+    assert response.status_code == status_code, f"Response code {response.status_code} != Target code: {status_code} on {url}"
+
+def redirect_join(to, fromm):
+    return urljoin(str(to), f"?next={str(fromm)}")
+
+def redirect_auth_check(url, email, status_code, redirect_url):
+    response = auth_check(url, email, status_code)
+    found = any(redirect_url in route for route in response.redirect_chain)
+    assert found, f"Target Redirect: {redirect_url} not in Redirect Chain: {response.redirect_chain}"
 
 
 def return_random_model_instance(model):
@@ -57,11 +90,18 @@ def create_threads_w_n_max_messages(n):
 def create_default_db_entries():
     return {
         "users" : {
-            "1": get_user_model().objects.get_or_create(email="test@1.com", password="1234"),
-            "2": get_user_model().objects.get_or_create(email="test@2.com", password="1234"),
-            "3": get_user_model().objects.get_or_create(email="test@3.com", password="1234"),
-            "4": get_user_model().objects.get_or_create(email="test@4.com", password="1234"),
-            "4": get_user_model().objects.get_or_create(email="test@5.com", password="1234"),
+            "1": get_user_model().objects.get_or_create(email="test1", password=PASSWORD),
+            "2": get_user_model().objects.get_or_create(email="test2", password=PASSWORD),
+            "3": get_user_model().objects.get_or_create(email="test3", password=PASSWORD),
+            "4": get_user_model().objects.get_or_create(email="test4", password=PASSWORD),
+            "4": get_user_model().objects.get_or_create(email="test5", password=PASSWORD),
+            "staff": get_user_model().objects.get_or_create(email="staff", password=PASSWORD, is_staff=True),
+            "admin": get_user_model().objects.get_or_create(
+                email="admin", 
+                password=PASSWORD,
+                is_staff=True,
+                is_superuser=True
+                ),
         },
         "jobs" : {
             c.FIELD_VALUE_UNKNOWN_JOB : m.Job.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_JOB),
@@ -75,21 +115,25 @@ def create_default_db_entries():
         "threads" : create_threads_w_n_max_messages(10), # list of thread objects
     }
 
-def email_password_to_http_auth(email, password):
-    return base64.b64encode(bytes(f'{email}:{password}', 'utf8')).decode('utf8')
-
 class EmailParserTestCase(TestCase):
-    def setUp(self):
-        #self.maxDiff = None
-        # any jobs have to be created before the 
-        # GmailParser is instantiated
-        self.defaults = create_default_db_entries()
-        self._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
-        self._parser = eparser.GmailParser()
+    # def setUp(self):
+    #     #self.maxDiff = None
+    #     # any jobs have to be created before the 
+    #     # GmailParser is instantiated
+    #     self.defaults = create_default_db_entries()
+    #     self._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
+    #     self._parser = eparser.GmailParser()
 
-    def tearDown(self) -> None:
-        self._test_file.close()
-        return super().tearDown()
+    @classmethod
+    def setUpTestData(cls):
+        cls.defaults = create_default_db_entries()
+        cls._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
+        cls._parser = eparser.GmailParser()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._test_file.close()
+        super().tearDownClass()
 
     def test_email_parser(self):
         data = json.load(self._test_file)
@@ -109,12 +153,16 @@ class EmailParserTestCase(TestCase):
 
 
 class GmailServiceTestCase(TestCase):
-    client = Client()
 
-    def setUp(self):
-        self.maxDiff = None
-        self.defaults = create_default_db_entries()
-        self.gservice = gmail_service.GmailService()
+    @classmethod
+    def setUpTestData(cls):
+        cls.maxDiff = None
+        cls.defaults = create_default_db_entries()
+        cls.gservice = gmail_service.GmailService()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
 
     #@override_settings(DEBUG="0", USE_SSL="0") # set debug to false to use AWS S3 storage
     def test_save_load_tokens_credentials(self):
@@ -145,17 +193,18 @@ class GmailServiceTestCase(TestCase):
 
 
 class ApiTestCase(TestCase):
-    client = Client()
 
-    def setUp(self):
-        self.maxDiff = None
-        self.defaults = create_default_db_entries()
-        self.gservice = gmail_service.GmailService()
-        self._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
+    @classmethod
+    def setUpTestData(cls):
+        cls.maxDiff = None
+        cls.defaults = create_default_db_entries()
+        cls.gservice = gmail_service.GmailService()
+        cls._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
 
-    def tearDown(self) -> None:
-        self._test_file.close()
-        return super().tearDown()
+    @classmethod
+    def tearDownClass(cls):
+        cls._test_file.close()
+        super().tearDownClass()
 
     def test_create_db_entry_from_parser(self):
         _parser = eparser.GmailParser()
@@ -176,59 +225,79 @@ class ApiTestCase(TestCase):
             url = reverse("api_get_all_thread_messages", args=[thread.gmail_thread_id])
 
             # unauthenticated user should get redirected
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 302)
-
+            redirect_auth_check(url, "", 302, redirect_join(USER_LOGIN, url))
+            auth_check(url, "staff", 200)
+            auth_check(url, "admin", 200)
             # owner of the dashboard should be able to see it
-            self.client.login(email=dashboard.owner.email, password='1234')
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
+            response = auth_check(url, dashboard.owner.email, 200)
             # form: [{model : name, fields : {fieldname: content} .....]
             data = json.loads(response.json()["data"])
             self.assertEqual(len(list(data)), messages_count)
-            self.client.logout()
 
     #@override_settings(DEBUG="0", USE_SSL="0")
     def test_get_unread_messages_basic_http_auth(self):
-        response = self.client.get(reverse("gmail_get_unread_messages"))
-        self.assertEqual(response.status_code, 401)
-
+        url = reverse("gmail_get_unread_messages")
+        auth_check(url, "", 401)
         user = get_user_model().objects.first()
-        self.client.defaults['HTTP_AUTHORIZATION'] = f"Basic {email_password_to_http_auth(user.email, '1234')}"
-        response = self.client.get(reverse("gmail_get_unread_messages"))
-        self.assertEqual(response.status_code, 200)
-
+        basic_auth_check(url, user.email, 200)
 
 class MessageManagerTestCase(TestCase):
-    client = Client()
 
-    def setUp(self):
-        self.maxDiff = None
-        self.defaults = create_default_db_entries()
+    @classmethod
+    def setUpTestData(cls):
+        cls.maxDiff = None
+        cls.defaults = create_default_db_entries()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
 
     def test_dashboard_view(self):
         dashboards = m.MessageLog.objects.all()
-
         for dash in dashboards:
             url = reverse("dashboard_detailed", args=[dash.slug])
             threads = m.Thread.objects.filter(message_thread_initiator=dash.owner)
 
             # unauthenticated user should get redirected
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 302)
+            redirect_auth_check(url, "", 302, redirect_join(USER_LOGIN, url))
 
             # user who is not a super user or staff or owner of the dashboard
             # should get denied
             user = get_user_model().objects.all().exclude(email=dash.owner.email).first()
-            self.client.login(email=user, password='1234')
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 403)
-            self.client.logout()
+            auth_check(url, user.email, 403)
 
+            auth_check(url, "staff", 200)
+            auth_check(url, "admin", 200)
             # owner of the dashboard should be able to see it
-            self.client.login(email=dash.owner.email, password='1234')
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.client.logout()
+            auth_check(url, dash.owner.email, 200)
+
+
+
+class AdminTestCase(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.maxDiff = None
+        cls.defaults = create_default_db_entries()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+    def test_thread_detailed(self):
+        threads = m.Thread.objects.all()
+        for thread in threads:
+            url = reverse('admin:message_thread_detailed_view', args=[thread.id])
+
+            # unauthenticated user should get redirected
+            redirect_auth_check(url, "", 302, redirect_join(ADMIN_LOGIN, url))
+            auth_check(url, "test1", 403)
+            auth_check(url, "staff", 200)
+            response = auth_check(url, "admin", 200)
+            # https://docs.djangoproject.com/en/4.0/topics/testing/tools/
+            # context is a list of contexts
+            context = response.context
+            #print(response.context)
+            
 
 
