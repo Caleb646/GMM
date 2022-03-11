@@ -1,12 +1,22 @@
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
-from django.urls import reverse, reverse_lazy
-from django.views import View
+import dateparser
+from constance import config
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-
+from django.core import serializers
+from django.core.mail import send_mail, send_mass_mail
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils.html import strip_tags
+from django.views import View
 from google_auth_oauthlib.flow import Flow
 
-from .. import constants as c, models as m, gmail_service
+from .. import constants as c
+from .. import gmail_service
+from .. import models as m
 
 
 class ThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -22,7 +32,34 @@ class ThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.is_superuser or self.request.user.is_staff
 
+
+class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = reverse_lazy("admin:login")
+    
+    def get(self, request, *args, **kwargs):
+        dashboard = m.MessageLog.objects.get(slug=kwargs["slug"])
+        total_open_messages = m.Thread.objects.filter(message_thread_initiator=dashboard.owner).count()
+        ctx = {
+            "open_message_count": total_open_messages,
+            "dashboard_link": settings.DOMAIN_URL + reverse("message_log_detailed", args=[dashboard.slug]),
+        }
+        message_body = render_to_string("email_notifications/open_message.html", ctx)
+        send_mail(
+            "Thomas Builders Message Manager",
+            strip_tags(message_body),
+            html_message=message_body,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[dashboard.owner.email],
+        )
+        return JsonResponse({c.JSON_RESPONSE_MSG_KEY: "The notification was successfully sent."}, status=200)
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.is_staff
+
+
 class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = reverse_lazy("admin:login")
+
     def get(self, request, format=None):
         # If modifying these scopes
         flow = Flow.from_client_config(gmail_service.GmailService.load_client_secret_config_f_file(), scopes=c.GMAIL_API_SCOPES)
