@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import random
 import uuid
 from http.cookies import SimpleCookie
@@ -15,11 +16,12 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from google.oauth2.credentials import Credentials
 
-from . import constants as c
-from . import email_parser as eparser
-from . import gmail_service
-from . import models as m
-from . import utils as u
+from .. import constants as c
+from .. import email_parser as eparser
+from .. import gmail_service
+from .. import models as m
+from .. import utils as u
+from . import gmail_mock
 
 # import django
 # django.setup()
@@ -66,7 +68,9 @@ def redirect_join(to, fromm):
 def redirect_auth_check(url, email, status_code, redirect_url):
     response = auth_check(url, email, status_code)
     found = any(redirect_url in route for route in response.redirect_chain)
-    assert found, f"Target Redirect: {redirect_url} not in Redirect Chain: {response.redirect_chain}"
+    assert (
+        found
+    ), f"Target Redirect: {redirect_url} not in Redirect Chain: {response.redirect_chain}"
 
 
 def from_context(context, key):
@@ -134,7 +138,9 @@ def create_threads_w_n_max_messages(n):
             )
 
             m.Attachment.objects.get_or_create(
-                message_id=message, gmail_attachment_id=str(uuid.uuid4()), filename=str(uuid.uuid4())
+                message_id=message,
+                gmail_attachment_id=str(uuid.uuid4()),
+                filename=str(uuid.uuid4()),
             )
     return ret
 
@@ -147,7 +153,9 @@ def create_default_db_entries():
             "3": get_user_model().objects.get_or_create(email="test3", password=PASSWORD),
             "4": get_user_model().objects.get_or_create(email="test4", password=PASSWORD),
             "4": get_user_model().objects.get_or_create(email="test5", password=PASSWORD),
-            "staff": get_user_model().objects.get_or_create(email="staff", password=PASSWORD, is_staff=True),
+            "staff": get_user_model().objects.get_or_create(
+                email="staff", password=PASSWORD, is_staff=True
+            ),
             "admin": get_user_model().objects.get_or_create(
                 email="admin", password=PASSWORD, is_staff=True, is_superuser=True
             ),
@@ -165,90 +173,11 @@ def create_default_db_entries():
     }
 
 
-class EmailParserTestCase(TestCase):
-    # def setUp(self):
-    #     #self.maxDiff = None
-    #     # any jobs have to be created before the
-    #     # GmailParser is instantiated
-    #     self.defaults = create_default_db_entries()
-    #     self._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
-    #     self._parser = eparser.GmailParser()
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.defaults = create_default_db_entries()
-        cls._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
-        cls._parser = eparser.GmailParser()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._test_file.close()
-        super().tearDownClass()
-
-    def test_email_parser(self):
-        data = json.load(self._test_file)
-        for msg in data["test_messages"]:
-            self._parser.parse(msg["raw_gmail_message"])
-
-            answer = msg["parsed_message"]
-            tested = self._parser.format_test_data()
-
-            # Because part of the email address parsing uses a
-            # set to remove duplicates the order is sometimes not the same.
-            # This fixes that and makes them comparable.
-            answer["To"] = sorted(answer["To"])
-            tested["To"] = sorted(tested["To"])
-
-            self.assertDictEqual(tested, answer)  # ,f"\n\nTest: {tested}\n\nAnswer: {answer}")
-
-
-class GmailServiceTestCase(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.maxDiff = None
-        cls.defaults = create_default_db_entries()
-        cls.gservice = gmail_service.GmailService()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-    # @override_settings(DEBUG="0", USE_SSL="0") # set debug to false to use AWS S3 storage
-    def test_save_load_tokens_credentials(self):
-        client_config = gmail_service.GmailService.load_client_secret_config_f_file()
-        # test that client id is there
-        client_config["web"]["client_id"]
-
-        # test that token and refresh token
-        token = gmail_service.GmailService.load_client_token()
-        token["token"]
-        token["refresh_token"]
-
-        # test saving credentials
-        creds = Credentials.from_authorized_user_info(
-            gmail_service.GmailService.load_client_token(), c.GMAIL_API_SCOPES
-        )
-        gmail_service.GmailService.save_client_token(creds)
-
-    # will test refresh decorator as well
-    # @override_settings(DEBUG="0", USE_SSL="0")
-    def test_get_message_thread(self):
-        service = gmail_service.GmailService()
-        threads = service.get_threads("label:inbox")
-        assert len(threads) > 0
-        thread = service.get_thread(threads[0]["id"])
-        assert thread
-        assert thread["messages"]
-        message = service.get_message(thread["messages"][0]["id"])
-        assert message
-
-
 class ApiTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.maxDiff = None
         cls.defaults = create_default_db_entries()
-        cls.gservice = gmail_service.GmailService()
         cls._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
 
     @classmethod
@@ -281,9 +210,11 @@ class ApiTestCase(TestCase):
             # owner of the dashboard should be able to see it
             response = auth_check(url, dashboard.owner.email, 200)
             messages = m.Message.objects.filter(message_thread_id=thread).values("pk")
-            self.assertListEqual([msg["pk"] for msg in messages], json_to_list(response.json()["data"], "pk"))
+            self.assertListEqual(
+                [msg["pk"] for msg in messages], json_to_list(response.json()["data"], "pk")
+            )
 
-    def test_get_unread_messages_basic_http_auth(self):
+    def test_get_unread_messages(self):
         url = reverse("gmail_get_unread_messages")
         auth_check(url, "", 401)
         user = get_user_model().objects.first()
@@ -300,12 +231,12 @@ class MessageManagerTestCase(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
 
-    def test_dashboard_view(self):
+    def test_message_log(self):
         dashboards = m.MessageLog.objects.all()
         for dash in dashboards:
             url = reverse("message_log_detailed", args=[dash.slug])
             threads = m.Thread.objects.filter(message_thread_initiator=dash.owner)
-
+            # TODO test formset
             # unauthenticated user should get redirected
             redirect_auth_check(url, "", 302, redirect_join(USER_LOGIN, url))
 
@@ -356,7 +287,9 @@ class AdminTestCase(TestCase):
         subject = "Thomas Builders Message Manager"
         from_email = settings.EMAIL_HOST_USER
         for message_log in m.MessageLog.objects.all():
-            total_open_messages = m.Thread.objects.filter(message_thread_initiator=message_log.owner).count()
+            total_open_messages = m.Thread.objects.filter(
+                message_thread_initiator=message_log.owner
+            ).count()
             ctx = {
                 "open_message_count": total_open_messages,
                 "dashboard_link": settings.DOMAIN_URL
@@ -372,8 +305,11 @@ class AdminTestCase(TestCase):
             auth_check(url, "test1", 403)
             auth_check(url, "staff", 200)
             auth_check(url, "admin", 200)
-            email_message = mail.EmailMessage(subject, message_body, from_email=from_email, to=recipient_list)
+            email_message = mail.EmailMessage(
+                subject, message_body, from_email=from_email, to=recipient_list
+            )
             compare_emails(email_message, mail.outbox[0])
+            mail.outbox.clear()
 
     def test_gmail_authorize(self):
         url = reverse("authorize_gmail_credentials")

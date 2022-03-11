@@ -26,7 +26,9 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         thread = m.Thread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
         messages = m.Message.objects.filter(message_thread_id=thread)
-        data = serializers.serialize("json", messages, fields=("fromm", "to", "cc", "time_received", "body"))
+        data = serializers.serialize(
+            "json", messages, fields=("fromm", "to", "cc", "time_received", "body")
+        )
 
         return JsonResponse(
             {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data}, status=200
@@ -39,10 +41,14 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
 class AttachmentDownloadView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         message = m.Message.objects.get(message_id=kwargs["message_id"])
-        attachment = m.Attachment.objects.get(message_id=message, gmail_attachment_id=kwargs["attachment_id"])
+        attachment = m.Attachment.objects.get(
+            message_id=message, gmail_attachment_id=kwargs["attachment_id"]
+        )
         gmail_service = g_service.GmailService()
         # layout {size: int, data: "base64encoded"}
-        gmail_attachment = gmail_service.get_attachment(message.message_id, attachment.gmail_attachment_id)
+        gmail_attachment = gmail_service.get_attachment(
+            message.message_id, attachment.gmail_attachment_id
+        )
         return HttpResponse(
             base64.urlsafe_b64decode(gmail_attachment["data"]),
             headers={
@@ -62,37 +68,11 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
 def gmail_get_unread_messages(request, *args, **kwargs):
     service = g_service.GmailService()
     g_parser = e_parser.GmailParser()
-    unread_threads = service.get_threads()
-    current_count = 0
-    max_count_before_sleep = 25
-
-    print("Getting unread messages")
-
-    for thread_info in unread_threads:
-        thread = service.get_thread(thread_info["id"])
-        messages = thread.get("messages")
-        if not messages:
-            continue
-        earliest_message_index = service.find_earliest_message_index(messages)
-        # set the earliest message as the first message in the list
-        # so the message_thread_initiator field will be set correctly
-        if earliest_message_index != len(messages):
-            earliest_message = messages[earliest_message_index]
-            first_message = messages[0]
-            earliest_message, first_message = first_message, earliest_message
-        for msg in messages:
-            current_count += 1
-            # rate limit requests
-            if current_count > max_count_before_sleep:
-                current_count = 0
-                sleep(0.25)
-            created = u.create_db_entry_from_parser(g_parser, msg)
-            if created:
-                service.messages_read.append(g_parser.message_id)
+    read_messages = u.process_multiple_gmail_threads(service, g_parser)
     # TODO uncomment
-    service.mark_read_messages()
+    service.mark_read_messages(read_messages)
     return JsonResponse(
-        {c.JSON_RESPONSE_MSG_KEY: f"{len(service.messages_read)} messages were added successfully."},
+        {c.JSON_RESPONSE_MSG_KEY: f"{len(read_messages)} messages were added successfully."},
         status=200,
     )
 
@@ -125,7 +105,9 @@ def notify_users_of_open_messages(request, *args, **kwargs):
         )
         # messages.append(("Thomas Builders Message Manager", message_body , settings.EMAIL_HOST_USER, [str(user.email)]))
     # send_mass_mail(messages, fail_silently=False)
-    return JsonResponse({c.JSON_RESPONSE_MSG_KEY: "Notifications were successfully sent."}, status=200)
+    return JsonResponse(
+        {c.JSON_RESPONSE_MSG_KEY: "Notifications were successfully sent."}, status=200
+    )
 
 
 ###############################################################################################################################################################
