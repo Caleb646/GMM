@@ -42,9 +42,10 @@ def auth_check(url, email, status_code):
     response = client.get(url, follow=True)
     client.logout()
     if response.redirect_chain:
-        assert any(
-            status_code in route for route in response.redirect_chain
-        ), f"Redirect chain {response.redirect_chain} != Target code: {status_code} on {url}"
+        assert any(status_code in route for route in response.redirect_chain), (
+            f"Redirect chain {response.redirect_chain} != Target code: {status_code} on"
+            f" {url}"
+        )
     else:
         assert (
             response.status_code == status_code
@@ -92,7 +93,9 @@ def compare_emails(one: mail.EmailMessage, two: mail.EmailMessage):
     assert one.subject == two.subject, f"one: {one.subject} != two: {two.subject}"
     assert one.body == two.body, f"one: {one.body} != two: {two.body}"
     assert one.to == two.to, f"one: {one.to} != two: {two.to}"
-    assert one.from_email == two.from_email, f"one: {one.from_email} != two: {two.from_email}"
+    assert (
+        one.from_email == two.from_email
+    ), f"one: {one.from_email} != two: {two.from_email}"
 
 
 def return_random_model_instance(model):
@@ -161,11 +164,15 @@ def create_default_db_entries():
             ),
         },
         "jobs": {
-            c.FIELD_VALUE_UNKNOWN_JOB: m.Job.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_JOB),
+            c.FIELD_VALUE_UNKNOWN_JOB: m.Job.objects.get_or_create(
+                name=c.FIELD_VALUE_UNKNOWN_JOB
+            ),
             "Test Job": m.Job.objects.get_or_create(name="Test Job"),
         },
         "thread_types": {
-            "1": m.ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE),
+            "1": m.ThreadType.objects.get_or_create(
+                name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
+            ),
             "2": m.ThreadType.objects.get_or_create(name="RFI"),
         },
         "dashboards": create_dashboards(),  # list of dashboard objects
@@ -211,7 +218,8 @@ class ApiTestCase(TestCase):
             response = auth_check(url, dashboard.owner.email, 200)
             messages = m.Message.objects.filter(message_thread_id=thread).values("pk")
             self.assertListEqual(
-                [msg["pk"] for msg in messages], json_to_list(response.json()["data"], "pk")
+                [msg["pk"] for msg in messages],
+                json_to_list(response.json()["data"], "pk"),
             )
 
     def test_get_unread_messages(self):
@@ -276,12 +284,18 @@ class AdminTestCase(TestCase):
             messages = m.Message.objects.filter(message_thread_id=thread)
             view_messages = from_context(response.context, "my_messages")
             difference = messages.difference(view_messages)
-            self.assertEqual(difference.count(), 0, f"\n\ndifference: {difference.values_list()}")
+            self.assertEqual(
+                difference.count(), 0, f"\n\ndifference: {difference.values_list()}"
+            )
 
-            attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
+            attachments = m.Attachment.objects.filter(
+                message_id__in=[m.id for m in messages]
+            )
             view_attachments = from_context(response.context, "my_attachments")
             difference = attachments.difference(view_attachments)
-            self.assertEqual(difference.count(), 0, f"\n\ndifference: {difference.values_list()}")
+            self.assertEqual(
+                difference.count(), 0, f"\n\ndifference: {difference.values_list()}"
+            )
 
     def test_resend_message_log_link(self):
         subject = "Thomas Builders Message Manager"

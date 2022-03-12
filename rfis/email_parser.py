@@ -1,10 +1,15 @@
 import re
-from typing import Dict, List
-from email import parser, message as py_email_message, policy
 from base64 import urlsafe_b64decode
+from email import message as py_email_message
+from email import parser, policy
+from typing import Dict, List
+
 from bs4 import BeautifulSoup
 
-from . import utils as u, models as m, constants as c
+from . import constants as c
+from . import models as m
+from . import utils as u
+
 
 ######################################################################################
 # Code was taken from here: https://github.com/zapier/email-reply-parser and modified
@@ -471,7 +476,8 @@ class GmailParser(BaseParser):
             "Cc": self.cc.replace(character_to_replace, ""),
             "Date": self.date.replace(character_to_replace, ""),
             "thread_type": self.thread_type.replace(character_to_replace, ""),
-            "job_name": self.job_name.replace(character_to_replace, "")
+            "job_name": self.job_name.replace(character_to_replace, ""),
+            "files_info": self.files_info
         }
 
     def _choose_body_parser(self):
