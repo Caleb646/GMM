@@ -31,7 +31,8 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         return JsonResponse(
-            {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data}, status=200
+            {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data},
+            status=200,
         )
 
     def test_func(self):
@@ -72,7 +73,11 @@ def gmail_get_unread_messages(request, *args, **kwargs):
     # TODO uncomment
     service.mark_read_messages(read_messages)
     return JsonResponse(
-        {c.JSON_RESPONSE_MSG_KEY: f"{len(read_messages)} messages were added successfully."},
+        {
+            c.JSON_RESPONSE_MSG_KEY: (
+                f"{len(read_messages)} messages were added successfully."
+            )
+        },
         status=200,
     )
 
@@ -86,7 +91,9 @@ def notify_users_of_open_messages(request, *args, **kwargs):
     )  # u.get_users_with_permission("rfis.receive_notifications", include_su=False)
     messages = []
     for user in all_users:
-        total_open_messages = m.Thread.objects.filter(message_thread_initiator=user).count()
+        total_open_messages = m.Thread.objects.filter(
+            message_thread_initiator=user
+        ).count()
         if total_open_messages == 0:  # only send an email to users with open messages
             continue
         user_dashboard, created = m.MessageLog.objects.get_or_create(owner=user)

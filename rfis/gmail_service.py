@@ -50,7 +50,9 @@ class GmailService:
     @staticmethod
     def save_client_token(credentials: Credentials):
         if isinstance(default_storage, S3Boto3Storage):
-            file: S3Boto3StorageFile = default_storage.open(c.GMAIL_API_CREDENTIALS_FILENAME, "w")
+            file: S3Boto3StorageFile = default_storage.open(
+                c.GMAIL_API_CREDENTIALS_FILENAME, "w"
+            )
             file.write(credentials.to_json())
             file.close()
         else:
@@ -97,7 +99,10 @@ class GmailService:
     @token_refresh
     def get_thread(self, thread_id):
         return (
-            self.service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+            self.service.users()
+            .threads()
+            .get(userId="me", id=thread_id, format="full")
+            .execute()
         )
 
     @token_refresh
@@ -107,7 +112,10 @@ class GmailService:
     @token_refresh
     def get_message(self, message_id):
         return (
-            self.service.users().messages().get(userId="me", id=message_id, format="full").execute()
+            self.service.users()
+            .messages()
+            .get(userId="me", id=message_id, format="full")
+            .execute()
         )
 
     @token_refresh

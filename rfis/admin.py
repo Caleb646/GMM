@@ -1,3 +1,4 @@
+from admin_searchable_dropdown.filters import AutocompleteFilter
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
@@ -5,9 +6,9 @@ from django.http import HttpResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from admin_searchable_dropdown.filters import AutocompleteFilter
-
-from . import forms as f, models as m, views as v
+from . import forms as f
+from . import models as m
+from . import views as v
 
 
 class MyUserAdmin(UserAdmin):
@@ -31,7 +32,10 @@ class MyUserAdmin(UserAdmin):
     )
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Permissions", {"fields": ("can_notify", "is_superuser", "is_staff", "is_active")}),
+        (
+            "Permissions",
+            {"fields": ("can_notify", "is_superuser", "is_staff", "is_active")},
+        ),
         ("Groups", {"fields": ("groups",)}),
     )
     add_fieldsets = (
@@ -137,7 +141,11 @@ class MessageThreadAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         # custom_urls have to be at the top of the list or django wont match them
         custom_urls = [
-            path("<int:pk>/detailed/", v.ThreadDetailedView.as_view(), name="message_thread_detailed_view"),
+            path(
+                "<int:pk>/detailed/",
+                v.ThreadDetailedView.as_view(),
+                name="message_thread_detailed_view",
+            ),
         ]
         return custom_urls + urls
 

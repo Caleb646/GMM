@@ -24,11 +24,16 @@ class GmailServiceMock:
 
     def get_messages(self, query_params=""):
         return {
-            "messages": [{"id": msg["id"], "threadId": msg["threadId"]} for msg in self.messages["messages"]]
+            "messages": [
+                {"id": msg["id"], "threadId": msg["threadId"]}
+                for msg in self.messages["messages"]
+            ]
         }
 
     def get_message(self, message_id):
-        return list(filter(lambda msg: msg["id"] == message_id, self.messages["messages"]))[0]
+        return list(
+            filter(lambda msg: msg["id"] == message_id, self.messages["messages"])
+        )[0]
 
     def mark_read_messages(self, read_messages):
         return

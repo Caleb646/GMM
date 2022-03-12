@@ -9,8 +9,8 @@ import dateparser
 from constance import config
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import Permission
-from django.db.models import Q
 from django.core.files.storage import default_storage
+from django.db.models import Q
 from django.http import HttpResponse
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 from thefuzz import fuzz, process
@@ -40,7 +40,8 @@ def create_db_entry_from_parser(
     ):
         return False
     time_message_received = dateparser.parse(
-        g_parser.date, settings={"TIMEZONE": "US/Eastern", "RETURN_AS_TIMEZONE_AWARE": True}
+        g_parser.date,
+        settings={"TIMEZONE": "US/Eastern", "RETURN_AS_TIMEZONE_AWARE": True},
     )
     # neither of these two should be created at this point
     job = m.Job.objects.get(name=g_parser.job_name)
@@ -117,7 +118,9 @@ def process_multiple_gmail_threads(
         thread = service.get_thread(thread_info["id"])
         read_messages.append(
             process_single_gmail_thread(
-                thread.get("messages"), g_parser, create_from_any_user=create_from_any_user
+                thread.get("messages"),
+                g_parser,
+                create_from_any_user=create_from_any_user,
             )
         )
 
@@ -126,7 +129,9 @@ def process_multiple_gmail_threads(
 
 def get_permission_object(permission_str):  # rfis.view_message
     app_label, codename = permission_str.split(".")
-    perm = Permission.objects.filter(content_type__app_label=app_label, codename=codename).first()
+    perm = Permission.objects.filter(
+        content_type__app_label=app_label, codename=codename
+    ).first()
     assert perm, "Permission cannot be none"
     return perm
 
@@ -154,7 +159,9 @@ def get_best_match(
     return ["", "", 0]
 
 
-def get_highest_possible_match(match: str, to_match: str, string_processor=lambda x: x) -> int:
+def get_highest_possible_match(
+    match: str, to_match: str, string_processor=lambda x: x
+) -> int:
     assert isinstance(match, str)
     assert isinstance(to_match, str)
     un_modified_match = match

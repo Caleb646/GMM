@@ -36,7 +36,9 @@ class UtilsTestCase(TestCase):
                 "Test Job": m.Job.objects.get_or_create(name="Test Job"),
             },
             "thread_types": {
-                "1": m.ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE),
+                "1": m.ThreadType.objects.get_or_create(
+                    name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
+                ),
                 "2": m.ThreadType.objects.get_or_create(name="RFI"),
             },
         }

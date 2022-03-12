@@ -28,7 +28,9 @@ class ThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
         messages = m.Message.objects.filter(message_thread_id=message_thread)
         attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
         return render(
-            request, self.template_name, {"my_messages": messages, "my_attachments": attachments}
+            request,
+            self.template_name,
+            {"my_messages": messages, "my_attachments": attachments},
         )
 
     def test_func(self):
@@ -57,7 +59,8 @@ class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
             recipient_list=[dashboard.owner.email],
         )
         return JsonResponse(
-            {c.JSON_RESPONSE_MSG_KEY: "The notification was successfully sent."}, status=200
+            {c.JSON_RESPONSE_MSG_KEY: "The notification was successfully sent."},
+            status=200,
         )
 
     def test_func(self):
@@ -70,7 +73,8 @@ class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, format=None):
         # If modifying these scopes
         flow = Flow.from_client_config(
-            gmail_service.GmailService.load_client_secret_file(), scopes=c.GMAIL_API_SCOPES
+            gmail_service.GmailService.load_client_secret_file(),
+            scopes=c.GMAIL_API_SCOPES,
         )
         # The URI created here must exactly match one of the authorized redirect URIs
         # for the OAuth 2.0 client, which you configured in the API Console. If this

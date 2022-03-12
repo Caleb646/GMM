@@ -77,7 +77,9 @@ class ThreadType(models.Model):
 
 class ThreadTypeAltName(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    thread_type = models.ForeignKey(ThreadType, on_delete=models.CASCADE, related_name="thread_type")
+    thread_type = models.ForeignKey(
+        ThreadType, on_delete=models.CASCADE, related_name="thread_type"
+    )
 
     def __str__(self):
         return self.name

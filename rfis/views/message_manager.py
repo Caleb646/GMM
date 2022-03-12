@@ -1,11 +1,13 @@
-from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
-from django.shortcuts import get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
-from .. import constants as c, models as m, utils as u, formsets as f_sets
+from .. import constants as c
+from .. import formsets as f_sets
+from .. import models as m
+from .. import utils as u
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -22,7 +24,8 @@ class MessageLogView(LoginRequiredMixin, UserPassesTestMixin, View):
         dashboard = get_object_or_404(m.MessageLog, slug=kwargs["slug"])
         formset = f_sets.MessageThreadFormSet(
             queryset=m.Thread.objects.filter(
-                thread_status=m.Thread.ThreadStatus.OPEN, message_thread_initiator=dashboard.owner
+                thread_status=m.Thread.ThreadStatus.OPEN,
+                message_thread_initiator=dashboard.owner,
             )
         ).create_model_formset()
         return render(request, self.template_name, {"formset": formset})

@@ -185,25 +185,10 @@ class ApiTestCase(TestCase):
     def setUpTestData(cls):
         cls.maxDiff = None
         cls.defaults = create_default_db_entries()
-        cls._test_file = open(c.EMAIL_TEST_DATA_PATH, "r+")
 
     @classmethod
     def tearDownClass(cls):
-        cls._test_file.close()
         super().tearDownClass()
-
-    def test_create_db_entry_from_parser(self):
-        _parser = eparser.GmailParser()
-        parsed_message_ids = []
-        data = json.load(self._test_file)
-        for msg in data["test_messages"]:
-            created = u.create_db_entry_from_parser(
-                _parser, msg["raw_gmail_message"], create_from_any_user=True
-            )
-            parsed_message_ids.append(_parser.message_id)
-
-        for message_id in parsed_message_ids:
-            m.Message.objects.get(message_id=message_id)
 
     def test_get_messages_for_thread(self):
         threads = m.Thread.objects.all()
@@ -224,7 +209,13 @@ class ApiTestCase(TestCase):
 
     def test_get_unread_messages(self):
         url = reverse("gmail_get_unread_messages")
-        auth_check(url, "", 401)
+        basic_auth_check(url, "", 401)
+        user = get_user_model().objects.first()
+        basic_auth_check(url, user.email, 200)
+
+    def test_notify_users_of_open_messages(self):
+        url = reverse("notify_users_of_open_messages")
+        basic_auth_check(url, "", 401)
         user = get_user_model().objects.first()
         basic_auth_check(url, user.email, 200)
 
