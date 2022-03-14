@@ -10,6 +10,6 @@ class StaticStorage(S3StaticStorage):
 
 
 class PrivateFileStorage(S3Boto3Storage):
-    location = f"static/{settings.AWS_LOCATION_PREFIX}"
+    location = f"media/{settings.AWS_LOCATION_PREFIX}"
     default_acl = "private"
     file_overwrite = True
