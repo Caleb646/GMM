@@ -1,6 +1,6 @@
 #!/bin/sh
 # to not use the AWS file storage
-#export TESTING_USE_DEFAULT_STORAGE=1
+export TESTING_USE_DEFAULT_STORAGE=1
 # to not use SMTP Email backend
 export TESTING_USE_DEFAULT_EMAIL_BACKEND=1
 # run in testing environment

@@ -40,9 +40,7 @@ class GmailService:
 
     @staticmethod
     def load_client_token():
-        credentials = m.GmailCredentials.load()
-        assert credentials, "Credentials cannot be None"
-        return credentials.credentials
+        return m.GmailCredentials.load_credentials()
 
     @staticmethod
     def save_client_token(credentials: Credentials):

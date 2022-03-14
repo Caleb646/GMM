@@ -1,6 +1,6 @@
 import datetime
 import uuid
-
+import json
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -29,6 +29,12 @@ class GmailCredentials(models.Model):
         if credentials := cls.objects.filter(pk=1):
             return credentials.first()
         return cls.objects.create(pk=1, credentials=None)
+
+    @classmethod
+    def load_credentials(cls):
+        credentials = cls.load()
+        assert credentials, "Credentials cannot be None"
+        return json.loads(credentials.credentials)
 
 
 class MyUser(AbstractUser):
