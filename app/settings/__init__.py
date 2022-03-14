@@ -1,4 +1,4 @@
-from .settings import * # settings has to be first
+from .settings import *  # settings has to be first
 from .storage import *  # then storage
-from .constance_settings import *
+from ._constance import *
 from .logging import *

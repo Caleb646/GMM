@@ -14,7 +14,8 @@ class HomeView(LoginRequiredMixin, View):
     template_name = "message_manager/index.html"
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
+        message_log = m.MessageLog.objects.filter(owner=request.user).first()
+        return render(request, self.template_name, {"message_log": message_log})
 
 
 class MessageLogView(LoginRequiredMixin, UserPassesTestMixin, View):

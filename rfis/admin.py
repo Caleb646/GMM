@@ -11,6 +11,10 @@ from . import models as m
 from . import views as v
 
 
+class GmailCredentialsAdmin(admin.ModelAdmin):
+    pass
+
+
 class MyUserAdmin(UserAdmin):
 
     add_form = f.MyUserCreateForm
@@ -185,6 +189,7 @@ admin.site.register(m.ThreadType, MessageThreadTypeAdmin)
 admin.site.register(m.Thread, MessageThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
+admin.site.register(m.GmailCredentials, GmailCredentialsAdmin)
 
 admin.site.register(Permission, PermissionAdmin)
 

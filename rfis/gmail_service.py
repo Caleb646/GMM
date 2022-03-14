@@ -14,6 +14,7 @@ from googleapiclient.discovery import build
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 
 from . import constants as c
+from . import models as m
 from . import utils as u
 
 
@@ -45,23 +46,15 @@ class GmailService:
 
     @staticmethod
     def load_client_token():
-        return u.load_file(c.GMAIL_API_CREDENTIALS_FILENAME, json.load)
+        credentials = m.GmailCredentials.load()
+        assert credentials, "Credentials cannot be None"
+        return credentials.credentials
 
     @staticmethod
     def save_client_token(credentials: Credentials):
-        if isinstance(default_storage, S3Boto3Storage):
-            file: S3Boto3StorageFile = default_storage.open(
-                c.GMAIL_API_CREDENTIALS_FILENAME, "w"
-            )
-            file.write(credentials.to_json())
-            file.close()
-        else:
-            if default_storage.exists(name=c.GMAIL_API_CREDENTIALS_FILENAME):
-                default_storage.delete(c.GMAIL_API_CREDENTIALS_FILENAME)
-            default_storage.save(
-                c.GMAIL_API_CREDENTIALS_FILENAME,
-                base.ContentFile(credentials.to_json(), c.GMAIL_API_CREDENTIALS_FILENAME),
-            )
+        db_credentials = m.GmailCredentials.load()
+        db_credentials.credentials = credentials.to_json()
+        db_credentials.save()
 
     def get_credentials(self):
         # The file token.json stores the user's access and refresh tokens, and is

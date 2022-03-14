@@ -10,6 +10,27 @@ from . import constants as c
 from .managers import JobManager, MessageManager, MessageThreadManager, MyUserManager
 
 
+class GmailCredentials(models.Model):
+
+    credentials = models.JSONField(null=True, default=None)
+
+    class Meta:
+        verbose_name_plural = "Gmail Credentials"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        if credentials := cls.objects.filter(pk=1):
+            return credentials.first()
+        return cls.objects.create(pk=1, credentials=None)
+
+
 class MyUser(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
