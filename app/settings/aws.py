@@ -5,11 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Boto3
 STATICFILES_STORAGE = "rfis.storage_backends.StaticStorage"
 
-AWS_MEDIA_LOCATION_PREFIX = os.getenv("AWS_LOCATION_PREFIX", "production")
+AWS_LOCATION_PREFIX = os.getenv("AWS_LOCATION_PREFIX", "production")
 
-print(
-    f"\nSettings: using AWS file storage w/ location prefix: {AWS_MEDIA_LOCATION_PREFIX}"
-)
+print(f"\nSettings: using AWS file storage w/ location prefix: {AWS_LOCATION_PREFIX}")
 
 # AWS
 AWS_S3_ACCESS_KEY_ID = os.environ["AWS_S3_ACCESS_KEY_ID"]
