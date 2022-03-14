@@ -1,6 +1,7 @@
 import datetime
-import uuid
 import json
+import uuid
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -34,6 +35,7 @@ class GmailCredentials(models.Model):
     def load_credentials(cls):
         credentials = cls.load()
         assert credentials, "Credentials cannot be None"
+        assert credentials.credentials, "Gmail credentials cannot be None"
         return json.loads(credentials.credentials)
 
 
