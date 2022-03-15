@@ -155,6 +155,7 @@ class Thread(models.Model):
         if not self.due_date:
             self.due_date = timezone.now() + datetime.timedelta(days=7)
         if not self.time_received:
+            print(f"[INFO] Time received was not set {self.time_received}")
             self.time_received = timezone.now()
         if not self.original_initiator:
             self.original_initiator = self.message_thread_initiator.email

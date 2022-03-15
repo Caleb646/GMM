@@ -52,8 +52,13 @@ def create_db_entry_from_parser(
         return False
     time_message_received = dateparser.parse(
         g_parser.date,
-        settings={"TIMEZONE": settings.TIME_ZONE, "RETURN_AS_TIMEZONE_AWARE": True},
+        settings={
+            "TIMEZONE": settings.TIME_ZONE,
+            "TO_TIMEZONE": settings.TIME_ZONE,
+            "RETURN_AS_TIMEZONE_AWARE": True,
+        },
     )
+    print(time_message_received)
     # neither of these two should be created at this point
     job = m.Job.objects.get(name=g_parser.job_name)
     message_type = m.ThreadType.objects.get(name=g_parser.thread_type)
