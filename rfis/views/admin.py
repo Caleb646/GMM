@@ -107,8 +107,8 @@ class GmailOAuthCallback(LoginRequiredMixin, UserPassesTestMixin, View):
         state_to_match = request.GET.get(c.GMAIL_API_SESSION_STATE_FIELDNAME)
         # if states dont match throw an error
         # print(f"google state: {state}\n\nmy state: {state_to_match}")
-        # if state != state_to_match and state and state_to_match:
-        #     return HttpResponse("States do not match", status=401)
+        if state != state_to_match and state and state_to_match:
+            return HttpResponse("States do not match", status=401)
 
         flow = Flow.from_client_config(
             gmail_service.GmailService.load_client_secret_file(),
