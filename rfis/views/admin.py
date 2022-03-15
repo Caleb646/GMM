@@ -98,7 +98,7 @@ class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.is_superuser  # or self.request.user.is_staff
 
 
-class GmailOAuthCallback(View):
+class GmailOAuthCallback(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, format=None):
         # Specify the state when creating the flow in the callback so that it can
         # verified in the authorization server response.
@@ -121,3 +121,6 @@ class GmailOAuthCallback(View):
         assert flow.credentials.refresh_token, "Refresh token has to be present"
         gmail_service.GmailService.save_client_token(flow.credentials)
         return redirect(reverse("admin:login"))
+
+    def test_func(self):  # only super users can change the gmail credentials
+        return self.request.user.is_superuser  # or self.request.user.is_staff

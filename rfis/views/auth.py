@@ -9,7 +9,6 @@ from .. import forms as f
 
 
 class LoginView(View):
-
     template_name = "auth/login.html"
 
     def get(self, request, *args, **kwargs):

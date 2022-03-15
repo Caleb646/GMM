@@ -192,12 +192,3 @@ admin.site.register(m.Attachment, AttachmentAdmin)
 admin.site.register(m.GmailCredentials, GmailCredentialsAdmin)
 
 admin.site.register(Permission, PermissionAdmin)
-
-# admin_site = MyAdminSite()
-# admin_site.site_header = "MessageLog"
-# admin_site.site_title = "MessageLog"
-# admin_site.register(MyUser, MyUserAdmin)
-# admin_site.register(Job, JobAdmin)
-# admin_site.register(Thread, MessageThreadAdmin)
-# admin_site.register(Message)
-# admin_site.register(Attachment)
