@@ -88,7 +88,7 @@ class DashboardAdmin(admin.ModelAdmin):
 
     def resend_button(self, object: m.MessageLog):
         return format_html(
-            f"<a href=javascript:fetch('{reverse('message_log_resend', args=[object.slug])}')>Resend</a>",
+            f"<a href=javascript:api_request('{reverse('message_log_resend', args=[object.slug])}')>Resend</a>",
         )
 
 

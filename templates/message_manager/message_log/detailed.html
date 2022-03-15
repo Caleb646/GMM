@@ -1,17 +1,7 @@
-{% extends "message_manager/base.html" %}
-
-{# Removes link to admin site #}
-{% block breadcrumbs %}
-    <div class="breadcrumbs">
-        <p class="lead text-center font-weight-bold">This is your message log. From here, you can edit all of your messages that are still open.</p>
-    </div>
-{% endblock %}
-
+{% extends "rfis/base.html" %}
 
 {% block content %}
-
     {{block.super}}
-
     <form method="post" class="form-inline">
         {% csrf_token %}
         {{ formset.non_form_errors.as_ul }}
@@ -49,8 +39,6 @@
                         <a class="nav-link active" onclick="get_messages('{% url 'api_get_all_thread_messages' form.gmail_thread_id.value %}', 'hidden_messages{{form.gmail_thread_id.value}}', '{{form.gmail_thread_id.value}}');"  href="#">Msgs</a>
                     </td>
                 </tr>
-
-
             <tr>
                 <td colspan="12" class="hiddenRow">
                     <div class="accordian-body collapse" id="hidden_messages{{form.gmail_thread_id.value}}">
@@ -58,59 +46,8 @@
                     </div>
                 </td>
             </tr>
-
-
-
-
             {% endfor %}
         </table>
         <input type="submit" value="Save Changes" />
     </form>
-
-    <script> 
-        //TODO setup caching
-
-        async function get_messages(url, id_tag, gmail_thread_id)
-        {
-            var hidden_table = document.getElementById(id_tag);
-            if (hidden_table.classList.contains("collapse")) {
-                //expand table
-                hidden_table.classList.remove("collapse");
-                hidden_table.classList.add("collapsed");
-            }
-            else {
-                //collapse table
-                hidden_table.classList.remove("collapsed");
-                hidden_table.classList.add("collapse");
-                return; //do not want make an api call when the table is being collapsed
-            }
-
-            let data = await fetch(url).then(response => response.json());
-            data = JSON.parse(data.data);
-            console.log(data);
-
-            let table = "";
-            for(let entry in data)
-            {
-                entry = data[entry];
-                console.log(entry);
-                table += `
-                <div class="row bg-dark text-white p-2 m-2">
-                    <div class="card bg-dark text-white" style="">
-                        <div class="card-body text-white">
-                            <h6 class="card-subtitle mb-2 text-muted">From: ${entry.fields.fromm}</h6>
-                            <h6 class="card-subtitle mb-2 ">To: ${entry.fields.to}</h6>
-                            <h6 class="card-subtitle mb-2 ">Cc: ${entry.fields.cc}</h6>
-                            <h6 class="card-subtitle mb-2 text-muted">Received: ${new Date(entry.fields.time_received).toLocaleString()}</h6>
-                            <p class="card-text lead">${entry.fields.body}</p>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }
-
-            hidden_table.innerHTML = table;
-        }
-
-    </script>
 {% endblock %}

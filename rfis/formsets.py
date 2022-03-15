@@ -33,7 +33,7 @@ class MessageThreadFormSet(BaseModelFormSet):
                     attrs={"rows": 2, "cols": 35, "readonly": "readonly"}
                 ),
                 "time_received": forms.DateTimeInput(
-                    attrs={"readonly": "readonly"}, format="%m/%d/%y %H:%M"
+                    attrs={"readonly": "readonly"}, format="%m/%d/%y"
                 ),
             },
         )

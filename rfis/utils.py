@@ -53,7 +53,6 @@ def create_db_entry_from_parser(
     time_message_received = dateparser.parse(
         g_parser.date,
         settings={
-            "TIMEZONE": settings.TIME_ZONE,
             "TO_TIMEZONE": settings.TIME_ZONE,
             "RETURN_AS_TIMEZONE_AWARE": True,
         },

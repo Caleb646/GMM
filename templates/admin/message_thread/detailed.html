@@ -1,7 +1,9 @@
-{% extends "base.html" %}
+{% extends "rfis/base.html" %}
 {% load i18n static %}
+{% load tz %}
 
 {% block content %}
+    {% timezone DEFAULT_TIMEZONE %}
     {{block.super}}
     <div class="container-fluid">
         {% for my_message in my_messages %}
@@ -22,5 +24,6 @@
                 </div>
             </div>
         {% endfor %}
-    </div>  
+    </div>
+    {% endtimezone %}
 {% endblock %}
