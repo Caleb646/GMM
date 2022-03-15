@@ -6,10 +6,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 STATICFILES_STORAGE = "rfis.storage_backends.StaticStorage"
 
 AWS_LOCATION_PREFIX = os.getenv("AWS_LOCATION_PREFIX", "production")
-# just in case I forgot to put AWS_LOCATION_PREFIX in the
-# .env.dev file
-if bool(int(os.getenv("DEBUG"), "0")):
-    AWS_LOCATION_PREFIX = "staging"
 
 print(f"\nSettings: using AWS file storage w/ location prefix: {AWS_LOCATION_PREFIX}")
 
