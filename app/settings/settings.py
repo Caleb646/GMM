@@ -1,5 +1,6 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -157,4 +158,3 @@ SESSION_COOKIE_SECURE = USE_SSL
 CSRF_COOKIE_SECURE = USE_SSL
 # SECURE_HSTS_INCLUDE_SUBDOMAINS  = not DEBUG
 # SECURE_HSTS_SECONDS             = 1000000
-# SECURE_FRAME_DENY               = not DEBUG
