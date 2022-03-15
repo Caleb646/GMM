@@ -6,7 +6,7 @@ import os
 from typing import List, Optional, Tuple
 
 import dateparser
-from constance import config
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.storage import default_storage
@@ -50,10 +50,9 @@ def create_db_entry_from_parser(
     g_parser.parse(gmail_message)
     if not should_create_thread(g_parser.thread_id, g_parser.fromm):
         return False
-
     time_message_received = dateparser.parse(
         g_parser.date,
-        settings={"TIMEZONE": "US/Eastern", "RETURN_AS_TIMEZONE_AWARE": True},
+        settings={"TIMEZONE": settings.TIME_ZONE, "RETURN_AS_TIMEZONE_AWARE": True},
     )
     # neither of these two should be created at this point
     job = m.Job.objects.get(name=g_parser.job_name)
