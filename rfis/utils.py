@@ -3,7 +3,7 @@ import itertools
 import json
 import math
 import os
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import dateparser
 from constance import config
@@ -29,16 +29,28 @@ def load_file(path, transform_file=lambda f: f, mode="rb"):
     return transform_file(default_storage.open(tail, mode))
 
 
+def should_create_thread(gmail_thread_id, from_email):
+    """
+    Cases:
+        User exist but the Thread does not -> True
+        User doesnt exist but the Thread does -> True
+        Both User and the Thread do exist -> True
+        Both User and the Thread do not exist -> False
+    """
+    # TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
+    return bool(
+        get_user_model().objects.filter(email=from_email).exists()
+        or m.Thread.objects.filter(gmail_thread_id=gmail_thread_id).exists()
+    )
+
+
 def create_db_entry_from_parser(
-    g_parser: "rfis.email_parser.GmailParser", gmail_message, create_from_any_user=False
+    g_parser: "rfis.email_parser.GmailParser", gmail_message
 ) -> bool:
     g_parser.parse(gmail_message)
-    # TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
-    if (
-        not create_from_any_user
-        and not get_user_model().objects.filter(email=g_parser.fromm).exists()
-    ):
+    if not should_create_thread(g_parser.thread_id, g_parser.fromm):
         return False
+
     time_message_received = dateparser.parse(
         g_parser.date,
         settings={"TIMEZONE": "US/Eastern", "RETURN_AS_TIMEZONE_AWARE": True},
@@ -46,8 +58,11 @@ def create_db_entry_from_parser(
     # neither of these two should be created at this point
     job = m.Job.objects.get(name=g_parser.job_name)
     message_type = m.ThreadType.objects.get(name=g_parser.thread_type)
-    # depending on the settings the user may need to be created
-    user, ucreated = get_user_model().objects.get_or_create(email=g_parser.fromm)
+    # The user may not exist because they were not the ones who sent
+    # the very first message, but a thread will never be created without a user
+    user: Optional[m.MyUser] = (
+        get_user_model().objects.filter(email=g_parser.fromm).first()
+    )
 
     message_thread, mtcreated = m.Thread.objects.get_or_create(
         gmail_thread_id=g_parser.thread_id,
@@ -89,7 +104,7 @@ def find_earliest_message_index(messages):
     return earliest_message_index
 
 
-def process_single_gmail_thread(messages, g_parser, create_from_any_user=False):
+def process_single_gmail_thread(messages, g_parser):
     read_messages = []
     if not messages:
         return read_messages
@@ -101,27 +116,21 @@ def process_single_gmail_thread(messages, g_parser, create_from_any_user=False):
         first_message = messages[0]
         earliest_message, first_message = first_message, earliest_message
     for msg in messages:
-        created = create_db_entry_from_parser(
-            g_parser, msg, create_from_any_user=create_from_any_user
-        )
+        created = create_db_entry_from_parser(g_parser, msg)
         if created:
             read_messages.append(g_parser.message_id)
     return read_messages
 
 
 def process_multiple_gmail_threads(
-    service, g_parser, query_params="label:inbox is:unread", create_from_any_user=False
+    service, g_parser, query_params="label:inbox is:unread"
 ):
     unread_threads = service.get_threads(query_params)
     read_messages: list[list[int]] = []
     for thread_info in unread_threads:
         thread = service.get_thread(thread_info["id"])
         read_messages.append(
-            process_single_gmail_thread(
-                thread.get("messages"),
-                g_parser,
-                create_from_any_user=create_from_any_user,
-            )
+            process_single_gmail_thread(thread.get("messages"), g_parser)
         )
 
     return list(itertools.chain(*read_messages))
