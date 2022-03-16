@@ -116,7 +116,8 @@ class ThreadJobFilter(AutocompleteFilter):
 class ThreadAdmin(admin.ModelAdmin):
     search_fields = (
         "subject__search",
-        "message__body__search",
+        # "message__body__search",
+        "message__vector_body_column",
     )  #
     list_filter = (
         ThreadJobFilter,

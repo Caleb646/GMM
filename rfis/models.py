@@ -4,6 +4,8 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.utils import timezone
 
@@ -179,10 +181,13 @@ class Message(models.Model):
     cc = models.CharField(max_length=1000)
     time_received = models.DateTimeField()
 
+    vector_body_column = SearchVectorField(null=True)
+
     objects = MessageManager()
 
     class Meta:
         ordering = ["time_received"]
+        indexes = (GinIndex(fields=["vector_body_column"]),)
 
     def save(self, *args, **kwargs):
         if not self.time_received:
