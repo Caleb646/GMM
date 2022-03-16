@@ -1,11 +1,8 @@
 import base64
-from time import sleep
 
-import dateparser
 from constance import config
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core import serializers
 from django.core.mail import send_mail, send_mass_mail
@@ -22,6 +19,28 @@ from .. import models as m
 from .. import utils as u
 
 
+class SettingsView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        allowed_settings = ["SUBJECT_LINE_PARSER_CONFIDENCE", "DEFAULT_TIMEZONE"]
+        key = request.GET.get("key")
+        if key and key in allowed_settings:
+            return JsonResponse(
+                {
+                    c.JSON_RESPONSE_MSG_KEY: "Setting retrieved",
+                    "data": config.__getattr__(key),
+                },
+                status=200,
+            )
+        return JsonResponse(
+            {
+                c.JSON_RESPONSE_MSG_KEY: (
+                    f"Setting: {key} doesn't exist or isn't allowed to be queried"
+                )
+            },
+            status=500,
+        )
+
+
 class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         thread = m.Thread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
@@ -29,7 +48,6 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
         data = serializers.serialize(
             "json", messages, fields=("fromm", "to", "cc", "time_received", "body")
         )
-
         return JsonResponse(
             {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data},
             status=200,

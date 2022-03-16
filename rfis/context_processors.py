@@ -1,4 +1,5 @@
 from django.conf import settings
+from constance import config
 
 
 def domain_url(request):
@@ -6,4 +7,4 @@ def domain_url(request):
 
 
 def default_timezone(request):
-    return {"DEFAULT_TIMEZONE": "US/Eastern"}
+    return {"DEFAULT_TIMEZONE": config.DEFAULT_TIMEZONE}

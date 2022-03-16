@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, redirect, render
@@ -37,6 +38,8 @@ class MessageLogView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
         if formset.is_valid():
             formset.save()
+            # show user a success message
+            messages.success(request, "Selected messages were closed.")
         return render(request, self.template_name, {"formset": formset})
 
     def test_func(self):

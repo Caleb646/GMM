@@ -69,7 +69,7 @@ class MyUserDashboardFilter(AutocompleteFilter):
     field_name = "owner"  # name of the foreign key field
 
 
-class MyUserMessageThreadFilter(AutocompleteFilter):
+class UserThreadFilter(AutocompleteFilter):
     title = "User"  # display title
     field_name = "message_thread_initiator"  # name of the foreign key field
 
@@ -97,27 +97,30 @@ class JobAdmin(admin.ModelAdmin):
     list_display = ("name", "start_date")
 
 
-class MessageThreadTypeAlternativeNameInline(admin.StackedInline):
+class ThreadTypeAltNameInline(admin.StackedInline):
     model = m.ThreadTypeAltName
     extra = 0
 
 
-class MessageThreadTypeAdmin(admin.ModelAdmin):
+class ThreadTypeAdmin(admin.ModelAdmin):
     # allows to create a message type with alternatives on
     # the message type create page
-    inlines = [MessageThreadTypeAlternativeNameInline]
+    inlines = [ThreadTypeAltNameInline]
 
 
-class MessageThreadJobFilter(AutocompleteFilter):
+class ThreadJobFilter(AutocompleteFilter):
     title = "Job"  # display title
     field_name = "job_id"  # name of the foreign key field
 
 
-class MessageThreadAdmin(admin.ModelAdmin):
-    search_fields = ("subject__startswith",)
+class ThreadAdmin(admin.ModelAdmin):
+    search_fields = (
+        "subject__search",
+        "message__body__search",
+    )  #
     list_filter = (
-        MessageThreadJobFilter,
-        MyUserMessageThreadFilter,
+        ThreadJobFilter,
+        UserThreadFilter,
         "time_received",
         "thread_type",
         "thread_status",
@@ -184,9 +187,9 @@ admin.site.site_title = "Dashboard"
 admin.site.register(m.MyUser, MyUserAdmin)
 admin.site.register(m.MessageLog, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
-admin.site.register(m.ThreadType, MessageThreadTypeAdmin)
+admin.site.register(m.ThreadType, ThreadTypeAdmin)
 # admin.site.register(m.ThreadTypeAltName, MessageThreadTypeAlternativeNameAdmin)
-admin.site.register(m.Thread, MessageThreadAdmin)
+admin.site.register(m.Thread, ThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
 admin.site.register(m.GmailCredentials, GmailCredentialsAdmin)

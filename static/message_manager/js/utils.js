@@ -30,6 +30,8 @@ async function get_messages(url, id_tag, gmail_thread_id)
         hidden_table.classList.add("collapse");
         return; //do not want make an api call when the table is being collapsed
     }
+    let TIMEZONE = await fetch("/api/settings/?key=DEFAULT_TIMEZONE").then(response => response.json());
+    TIMEZONE = TIMEZONE.data;
 
     let data = await fetch(url).then(response => response.json());
     data = JSON.parse(data.data);
@@ -47,7 +49,7 @@ async function get_messages(url, id_tag, gmail_thread_id)
                     <h6 class="card-subtitle mb-2 text-muted">From: ${entry.fields.fromm}</h6>
                     <h6 class="card-subtitle mb-2 ">To: ${entry.fields.to}</h6>
                     <h6 class="card-subtitle mb-2 ">Cc: ${entry.fields.cc}</h6>
-                    <h6 class="card-subtitle mb-2 text-muted">Received: ${new Date(entry.fields.time_received).toLocaleString("en-US", {timeZone : "America/New_York"})} US/Eastern</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Received: ${new Date(entry.fields.time_received).toLocaleString("en-US", {timeZone : TIMEZONE})} ${TIMEZONE}</h6>
                     <p class="card-text lead">${entry.fields.body}</p>
                 </div>
             </div>

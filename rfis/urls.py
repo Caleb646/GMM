@@ -34,6 +34,11 @@ urlpatterns = [
         name="message_log_resend",
     ),
     path(
+        "api/settings/",  # form: ?key=setting-name
+        v.SettingsView.as_view(),
+        name="api_settings_get",
+    ),
+    path(
         "api/message-thread/<str:gmail_thread_id>/messages/",
         v.ThreadMessagesView.as_view(),
         name="api_get_all_thread_messages",

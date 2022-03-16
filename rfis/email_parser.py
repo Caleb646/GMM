@@ -5,6 +5,7 @@ from email import parser, policy
 from typing import Dict, List
 
 from bs4 import BeautifulSoup
+from constance import config
 
 from . import constants as c
 from . import models as m
@@ -238,8 +239,8 @@ class SubjectLineParser(BaseParser):
         super().__init__()
         self.THREAD_TYPE_CHOICES = [mt.name for mt in m.ThreadType.objects.all()]
         self.JOB_NAMES = [j.name for j in m.Job.objects.all()]
+        self._min_score_allowed = config.SUBJECT_LINE_PARSER_CONFIDENCE
         self._best_subject_line_match = {}
-        self._min_score_allowed = 50
 
     def parse(self, subject_line):
         self._clear()
