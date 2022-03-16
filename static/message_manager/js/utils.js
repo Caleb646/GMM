@@ -8,6 +8,7 @@ function api_request(url, method = "GET") {
             alert(response.statusText);
         }
         location.reload();
+        alert(response.status);
         return response;
 
         }).catch(error => {

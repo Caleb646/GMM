@@ -34,7 +34,6 @@
                                 {{ field.errors.as_ul }}
                                 {{ field }}
                             </td>
-                            
                         {% endfor %}
                         <td>
                             <a class="nav-link active" onclick="get_messages('{% url 'api_get_all_thread_messages' form.gmail_thread_id.value %}', 'hidden_messages{{form.gmail_thread_id.value}}', '{{form.gmail_thread_id.value}}');"  href="#">Msgs</a>

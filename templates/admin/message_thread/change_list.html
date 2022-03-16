@@ -4,7 +4,6 @@
 {% load static %}
 
 {% block object-tools-items %}
-    
     <li>  
            {% comment %} Don't append DOMAIN_URL to the url below {% endcomment %}
         <a href="#" onclick="api_request('{% url 'gmail_get_unread_messages' %}');" class="">Refresh</a>
@@ -16,9 +15,9 @@
     {{block.super}} 
 {% endblock %}
 
-{% block content %}
+{% comment %} {% block content %}
     {% timezone DEFAULT_TIMEZONE %}
         {{block.super}}
     {% endtimezone %}
     <script src="{% static 'message_manager/js/utils.js' %}"></script>    
-{% endblock %}
+{% endblock %} {% endcomment %}

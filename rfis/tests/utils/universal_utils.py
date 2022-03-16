@@ -4,10 +4,11 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from .. import constants as c
-from .. import models as m
+from ... import constants as c
+from ... import models as m
 
 PASSWORD = "1234"
+
 
 def return_random_model_instance(model):
     return random.choice(list(model.objects.all()))
@@ -26,6 +27,11 @@ def create_threads_w_n_max_messages(n):
     users = get_user_model().objects.all()
     ret = []
     num_msgs = random.randrange(0, n)
+
+    thread_count = m.Thread.objects.all().count()
+    if thread_count > 100:  # dont create more than 100 threads
+        return []
+
     for u in users:
         job = return_random_model_instance(m.Job)
         thread_type = return_random_model_instance(m.ThreadType)
@@ -59,7 +65,7 @@ def create_threads_w_n_max_messages(n):
     return ret
 
 
-def create_default_db_entries():
+def create_default_db_entries(nthreads=10):
     return {
         "users": {
             "1": get_user_model().objects.get_or_create(email="test1", password=PASSWORD),
@@ -87,5 +93,5 @@ def create_default_db_entries():
             "2": m.ThreadType.objects.get_or_create(name="RFI"),
         },
         "dashboards": create_dashboards(),  # list of dashboard objects
-        "threads": create_threads_w_n_max_messages(10),  # list of thread objects
+        "threads": create_threads_w_n_max_messages(nthreads),  # list of thread objects
     }

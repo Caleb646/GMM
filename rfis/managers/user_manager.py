@@ -2,10 +2,10 @@ import uuid
 
 from django.contrib.auth.base_user import BaseUserManager
 
-from . import constants as c
+from .. import constants as c
 
 
-class MyUserManager(BaseUserManager):
+class UserManager(BaseUserManager):
     """
     Custom user model manager where email is the unique identifiers
     for authentication instead of usernames.
@@ -44,30 +44,3 @@ class MyUserManager(BaseUserManager):
     def reset_password(self, password):
         self.set_password(password)
         self.save()
-
-
-class JobManager(BaseUserManager):
-    def get_or_unknown(self, **kwargs):
-        if job := self.filter(name=kwargs.get("name")):
-            # force queryset to be evaluated
-            return job.get(name=kwargs.get("name"))
-        return self.get(name=c.FIELD_VALUE_UNKNOWN_JOB)
-
-    def get_or_create(self, **kwargs):
-        if job := self.filter(name=kwargs.get("name")):
-            return (job.get(name=kwargs.get("name")), False)
-        return (self.create(**kwargs), True)
-
-
-class MessageThreadManager(BaseUserManager):
-    def get_or_create(self, **kwargs):
-        if thread := self.filter(gmail_thread_id=kwargs.get("gmail_thread_id")):
-            return (thread.get(gmail_thread_id=kwargs.get("gmail_thread_id")), False)
-        return (self.create(**kwargs), True)
-
-
-class MessageManager(BaseUserManager):
-    def get_or_create(self, **kwargs):
-        if message := self.filter(message_id=kwargs.get("message_id")):
-            return (message.get(message_id=kwargs.get("message_id")), False)
-        return (self.create(**kwargs), True)

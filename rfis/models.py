@@ -10,7 +10,7 @@ from django.db import models
 from django.utils import timezone
 
 from . import constants as c
-from .managers import JobManager, MessageManager, MessageThreadManager, MyUserManager
+from . import managers as mg
 
 
 class GmailCredentials(models.Model):
@@ -49,7 +49,7 @@ class MyUser(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects = MyUserManager()
+    objects = mg.UserManager()
 
     @staticmethod
     def get_user_sentinel_id():
@@ -77,7 +77,7 @@ class Job(models.Model):
     name = models.CharField(max_length=100, unique=True)
     start_date = models.DateTimeField()
 
-    objects = JobManager()
+    objects = mg.JobManager()
 
     class Meta:
         ordering = ["start_date"]
@@ -151,7 +151,7 @@ class Thread(models.Model):
     # blank=True has to be set or the field will be required in any model form
     accepted_answer = models.TextField(default="", blank=True)
 
-    objects = MessageThreadManager()
+    objects = mg.ThreadManager()
 
     def save(self, *args, **kwargs):
         if not self.due_date:
@@ -183,7 +183,7 @@ class Message(models.Model):
 
     vector_body_column = SearchVectorField(null=True)
 
-    objects = MessageManager()
+    objects = mg.MessageManager()
 
     class Meta:
         ordering = ["time_received"]

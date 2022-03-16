@@ -1,24 +1,8 @@
-import base64
-import json
-import os
-import random
-import uuid
-from http.cookies import SimpleCookie
-from urllib.parse import urljoin
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core import mail
-from django.template.loader import render_to_string
-from django.test import Client, TestCase, override_settings
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
-from django.utils.html import strip_tags
-from google.oauth2.credentials import Credentials
+from django.test import TestCase
 
 from .. import constants as c
 from .. import email_parser as eparser
-from .. import gmail_service
 from .. import models as m
 from .. import utils as u
 from . import gmail_mock
