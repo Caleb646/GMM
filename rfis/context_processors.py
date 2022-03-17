@@ -1,5 +1,5 @@
-from django.conf import settings
 from constance import config
+from django.conf import settings
 
 
 def domain_url(request):
