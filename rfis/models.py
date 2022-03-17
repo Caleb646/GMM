@@ -178,10 +178,10 @@ class Message(models.Model):
     debug_unparsed_body = models.TextField(default="")
     fromm = models.CharField(max_length=100)
     to = models.CharField(max_length=200)
-    cc = models.CharField(max_length=1000)
+    cc = models.CharField(max_length=1000, blank=True)
     time_received = models.DateTimeField()
 
-    vector_body_column = SearchVectorField(null=True)
+    vector_body_column = SearchVectorField(null=True, blank=True)
 
     objects = mg.MessageManager()
 

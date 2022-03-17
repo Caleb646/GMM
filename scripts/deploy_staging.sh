@@ -14,5 +14,4 @@ done
 pip freeze > requirements.txt
 git add .
 git commit -m "$1"
-echo "did not exit"
-#git push heroku-staging master
+git push heroku-staging master

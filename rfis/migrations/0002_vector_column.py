@@ -8,45 +8,11 @@ from django.db.utils import ProgrammingError
 logger = logging.getLogger()  # root logger
 
 
-def create_trigger(apps, schema_editor):
-    try:
-        logger.info("Creating trigger for vector column")
-        migrations.RunSQL(
-            sql="""
-                CREATE TRIGGER search_vector_trigger
-                BEFORE INSERT OR UPDATE OF body, vector_body_column
-                ON rfis_message
-                FOR EACH ROW EXECUTE PROCEDURE
-                tsvector_update_trigger(
-                    vector_body_column, 'pg_catalog.english', body
-                );
-                UPDATE rfis_message SET vector_body_column = NULL;
-                """,
-            # when the migration is unapplied
-            reverse_sql=""" 
-                DROP TRIGGER IF EXISTS search_vector_trigger
-                ON rfis_message;
-                """,
-        ),
-        logger.info("Succesfully created trigger for vector column")
-    except ProgrammingError as e:
-        logger.exception(e)
-
-
-def remove_trigger(apps, schema_editor):
-    logger.info("Removing trigger for vector column")
-    migrations.RunSQL(
-        sql=""" 
-            DROP TRIGGER IF EXISTS search_vector_trigger
-            ON rfis_message;
-            """
-    )
-    logger.info("Succesfully removed trigger for vector column")
-
-
 def compute_search_vector(apps, schema_editor):
+    logger.info("\nUpdating current messages")
     message = apps.get_model("rfis", "Message")
     message.objects.update(vector_body_column=SearchVector("body"))
+    logger.info("\nSuccessfully updated current messages")
 
 
 class Migration(migrations.Migration):
@@ -56,7 +22,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_trigger, reverse_code=remove_trigger),
+        migrations.RunSQL(
+            sql="""
+                DROP TRIGGER IF EXISTS search_vector_trigger
+                ON rfis_message;
+
+                CREATE TRIGGER search_vector_trigger
+                BEFORE INSERT OR UPDATE OF body, vector_body_column
+                ON rfis_message
+                FOR EACH ROW EXECUTE PROCEDURE
+                tsvector_update_trigger(
+                vector_body_column, 'pg_catalog.english', body
+                );
+
+                UPDATE rfis_message SET vector_body_column = NULL;
+                """,
+            # when the migration is unapplied
+            reverse_sql=""" 
+                DROP TRIGGER IF EXISTS search_vector_trigger
+                ON rfis_message;
+                """,
+        ),
         migrations.RunPython(
             compute_search_vector, reverse_code=migrations.RunPython.noop
         ),
