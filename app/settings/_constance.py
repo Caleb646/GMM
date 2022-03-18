@@ -21,7 +21,7 @@ CONSTANCE_CONFIG = {
         "gmail_web_client_secret",
     ),
     "SUBJECT_LINE_PARSER_CONFIDENCE": (
-        65,
+        85,
         "The minimum score required for a message type or job name to be pulled from an"
         " email subject line.",
         int,

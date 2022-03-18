@@ -29,6 +29,7 @@ USERS.append(
         "email": settings.CRON_USER_NAME,
         "password": settings.CRON_USER_PASSWORD,
         "is_active": True,
+        "can_notify": False,  # shouldnt get emails
     }
 )
 

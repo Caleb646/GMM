@@ -8,7 +8,7 @@ function api_request(url, method = "GET") {
             alert(response.statusText);
         }
         location.reload();
-        alert(response.status);
+        //alert(response.status);
         return response;
 
         }).catch(error => {
@@ -51,7 +51,7 @@ async function get_messages(url, id_tag, gmail_thread_id)
                     <h6 class="card-subtitle mb-2 ">To: ${entry.fields.to}</h6>
                     <h6 class="card-subtitle mb-2 ">Cc: ${entry.fields.cc}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">Received: ${new Date(entry.fields.time_received).toLocaleString("en-US", {timeZone : TIMEZONE})} ${TIMEZONE}</h6>
-                    <p class="card-text lead">${entry.fields.body}</p>
+                    <pre style="white-space: pre-wrap;" class="card-text">${ entry.fields.debug_unparsed_body }</pre>
                 </div>
             </div>
         </div>

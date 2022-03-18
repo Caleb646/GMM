@@ -14,7 +14,13 @@
                         <h6 class="card-subtitle mb-2 text-muted">From: {{ my_message.fromm }}</h6>
                         <h6 class="card-subtitle mb-2 ">To: {{ my_message.to }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted">Received: {{ my_message.time_received }} {{DEFAULT_TIMEZONE}}</h6>
-                        <p class="card-text">{{ my_message.body }}</p>
+                        <pre style="white-space: pre-wrap;" class="card-text">{{ my_message.debug_unparsed_body }}
+                            {% comment %} <a href="#" class="card-link">...More<a> {% endcomment %}
+                            {% comment %} <div>
+                                <pre class="card-text text-warning" style="white-space: pre-wrap;">{{ my_message.debug_unparsed_body }}</pre>
+                                <a href="#" class="card-link">...Less<a>
+                            </div> {% endcomment %}
+                        </pre>
                         {% for atx in my_attachments %}
                             {% if atx.message_id.id == my_message.id %}
                                 <a href="{% url 'gmail_message_attachment_download' my_message.message_id atx.gmail_attachment_id  %}" class="card-link" download>{{ atx.filename }}</a>

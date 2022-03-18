@@ -46,7 +46,9 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
         thread = m.Thread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
         messages = m.Message.objects.filter(message_thread_id=thread)
         data = serializers.serialize(
-            "json", messages, fields=("fromm", "to", "cc", "time_received", "body")
+            "json",
+            messages,
+            fields=("fromm", "to", "cc", "time_received", "body", "debug_unparsed_body"),
         )
         return JsonResponse(
             {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data},

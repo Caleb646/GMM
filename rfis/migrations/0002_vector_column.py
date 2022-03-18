@@ -11,7 +11,7 @@ logger = logging.getLogger()  # root logger
 def compute_search_vector(apps, schema_editor):
     logger.info("\nUpdating current messages")
     message = apps.get_model("rfis", "Message")
-    message.objects.update(vector_body_column=SearchVector("body"))
+    message.objects.update(vector_body_column=SearchVector("debug_unparsed_body"))
     logger.info("\nSuccessfully updated current messages")
 
 
@@ -28,11 +28,11 @@ class Migration(migrations.Migration):
                 ON rfis_message;
 
                 CREATE TRIGGER search_vector_trigger
-                BEFORE INSERT OR UPDATE OF body, vector_body_column
+                BEFORE INSERT OR UPDATE OF debug_unparsed_body, vector_body_column
                 ON rfis_message
                 FOR EACH ROW EXECUTE PROCEDURE
                 tsvector_update_trigger(
-                vector_body_column, 'pg_catalog.english', body
+                vector_body_column, 'pg_catalog.english', debug_unparsed_body
                 );
 
                 UPDATE rfis_message SET vector_body_column = NULL;

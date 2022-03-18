@@ -119,8 +119,9 @@ def process_single_gmail_thread(messages, g_parser):
         earliest_message, first_message = first_message, earliest_message
     for msg in messages:
         created = create_db_entry_from_parser(g_parser, msg)
-        if created:
-            read_messages.append(g_parser.message_id)
+        # don't want to keep reading spam mail so mark an email as read
+        # even if it wasn't put into the database
+        read_messages.append(g_parser.message_id)
     return read_messages
 
 

@@ -4,10 +4,10 @@ import os
 from django.conf import settings
 from django.test import TestCase
 
-from .. import constants as c
-from .. import email_parser as eparser
-from .. import models as m
-from . import gmail_mock
+from ... import constants as c
+from ... import email_parser as eparser
+from ... import models as m
+from .. import gmail_mock
 
 
 class EmailParserTestCase(TestCase):
