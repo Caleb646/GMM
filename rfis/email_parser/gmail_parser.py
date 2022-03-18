@@ -1,9 +1,8 @@
 import re
-from typing import Dict, List, MutableMapping
+from typing import List
 
-from .. import utils as u
-from .base_parsers import BaseBodyParser, BaseParser
-from .content_parsers import HtmlParser, MultiPartParser, PlainTextParser
+from .base_parsers import BaseParser
+from .content_parsers import MultiPartParser
 from .subjectline_parser import SubjectLineParser
 
 

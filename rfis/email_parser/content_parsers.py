@@ -1,4 +1,3 @@
-import os
 import re
 from base64 import urlsafe_b64decode
 

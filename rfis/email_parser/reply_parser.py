@@ -1,9 +1,4 @@
 import re
-from tkinter import N
-
-from .. import constants as c
-from .. import models as m
-from .. import utils as u
 
 ######################################################################################
 # Code was taken from here: https://github.com/zapier/email-reply-parser and modified
