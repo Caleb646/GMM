@@ -15,11 +15,8 @@ class HtmlParser(BaseBodyParser):
 
     def _parse_body(self, data):
         soup = BeautifulSoup(urlsafe_b64decode(data).decode(), "html.parser")
-        self._chosen["debug_unparsed_body"].append(
-            str(soup.prettify())
-        )  # store all of the text before the regex is applied for debugging
-        # text = EmailReplyParser.parse_reply(soup.get_text(" ", strip=True))
         text = soup.get_text(" ", strip=True)
+        self._chosen["debug_unparsed_body"].append(text)  # str(soup.prettify())
         if match := re.search(self.HTML_BODY_PATTERN, text):
             return text[: match.span()[0]]
         return text
@@ -38,12 +35,18 @@ class HtmlParser(BaseBodyParser):
 
 
 class PlainTextParser(BaseBodyParser):
+    BRACKET_EMAIL_PATTERN = re.compile(
+        r"<([a-zA-Z0-9+._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)>"
+    )
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def _parse_body(self, data):
         decoded_data = urlsafe_b64decode(data).decode()
-
+        # removes brackets on email addresses <address> -> address
+        # so beautifulsoup doesnt remove them
+        decoded_data = re.sub(self.BRACKET_EMAIL_PATTERN, r"\1", decoded_data)
         soup = BeautifulSoup(decoded_data, "html.parser")
         text = soup.get_text(" ", strip=True)
 
@@ -115,8 +118,7 @@ class MultiPartParser(BaseBodyParser):
             return self._html_parser.body
         elif self._text_parser.body:
             return self._text_parser.body
-        else:
-            return self._text_parser.body + self._html_parser.body
+        return self._text_parser.body + self._html_parser.body
 
     @property
     def debug_unparsed_body(self):
@@ -125,11 +127,9 @@ class MultiPartParser(BaseBodyParser):
             return self._html_parser.debug_unparsed_body
         elif self._text_parser.debug_unparsed_body:
             return self._text_parser.debug_unparsed_body
-        else:
-            return (
-                self._text_parser.debug_unparsed_body
-                + self._html_parser.debug_unparsed_body
-            )
+        return (
+            self._text_parser.debug_unparsed_body + self._html_parser.debug_unparsed_body
+        )
 
     @property
     def files_info(self):

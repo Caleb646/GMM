@@ -32,7 +32,7 @@ class ApiTestCase(TestCase):
             messages = m.Message.objects.filter(message_thread_id=thread).values("pk")
             self.assertListEqual(
                 [msg["pk"] for msg in messages],
-                testu.json_to_list(response.json()["data"], "pk"),
+                testu.json_to_list(response.json()["data"]["messages"], "pk"),
             )
 
     def test_get_unread_messages(self):

@@ -2,3 +2,8 @@
     color: #212529;
     background-color: #121212;
 }
+
+.mark {
+    background: rgb(55, 0, 255);
+    color: rgb(250, 0, 0);
+  }

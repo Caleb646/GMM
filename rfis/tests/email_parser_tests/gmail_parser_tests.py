@@ -10,7 +10,7 @@ from ... import models as m
 from .. import gmail_mock
 
 
-class EmailParserTestCase(TestCase):
+class GmailParserTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.maxDiff = None

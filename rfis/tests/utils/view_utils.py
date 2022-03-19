@@ -56,6 +56,7 @@ def redirect_auth_check(url, email, status_code, redirect_url):
 
 
 def from_context(context, key):
+    # print(f"\nkey: {key}\n\ncontext: {context}")
     if isinstance(context, dict):
         return context.get(key)
     elif not context:

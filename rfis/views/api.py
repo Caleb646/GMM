@@ -45,13 +45,33 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         thread = m.Thread.objects.get(gmail_thread_id=kwargs["gmail_thread_id"])
         messages = m.Message.objects.filter(message_thread_id=thread)
-        data = serializers.serialize(
+        messages_data = serializers.serialize(
             "json",
             messages,
-            fields=("fromm", "to", "cc", "time_received", "body", "debug_unparsed_body"),
+            fields=(
+                "message_id",
+                "fromm",
+                "to",
+                "cc",
+                "time_received",
+                "body",
+                "debug_unparsed_body",
+            ),
         )
+        attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
+        attachments_data = serializers.serialize(
+            "json",
+            attachments,
+            fields=(
+                "message_id",
+                "gmail_attachment_id",
+                "filename",
+            ),
+        )
+
+        context = {"messages": messages_data, "attachments": attachments_data}
         return JsonResponse(
-            {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": data},
+            {c.JSON_RESPONSE_MSG_KEY: "Messages retrieved successfully", "data": context},
             status=200,
         )
 
