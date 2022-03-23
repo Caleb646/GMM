@@ -132,7 +132,7 @@ def notify_users_of_open_messages(request, *args, **kwargs):
     messages = []
     for user in all_users:
         total_open_messages = m.Thread.objects.filter(
-            message_thread_initiator=user
+            message_thread_initiator=user, thread_status=m.Thread.ThreadStatus.OPEN
         ).count()
         if total_open_messages == 0:  # only send an email to users with open messages
             continue

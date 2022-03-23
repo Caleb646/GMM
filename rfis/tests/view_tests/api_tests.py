@@ -44,6 +44,8 @@ class ApiTestCase(TestCase):
         # basic_auth_check(url, user.email, 200)
 
     def test_notify_users_of_open_messages(self):
+        # TODO test that only threads with users that have the can_notify set to True and
+        # threads that are OPEN
         url = reverse("notify_users_of_open_messages")
         testu.basic_auth_check(url, "", 401)
         user = get_user_model().objects.first()

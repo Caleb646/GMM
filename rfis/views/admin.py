@@ -42,8 +42,9 @@ class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         dashboard = m.MessageLog.objects.get(slug=kwargs["slug"])
-        total_open_messages = m.Thread.objects.filter(
-            message_thread_initiator=dashboard.owner
+        total_open_messages = m.Thread.objects.filter(  # TODO this should be made into a method on the Thread Manager class
+            message_thread_initiator=dashboard.owner,
+            thread_status=m.Thread.ThreadStatus.OPEN,
         ).count()
         ctx = {
             "open_message_count": total_open_messages,

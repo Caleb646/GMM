@@ -1,4 +1,6 @@
-1. If the domain name has change for staging or production the CORs allowed origins in the AWS S3 Bucket will need to be updated.
-2. Run tests before deploying. Tests should be ran with both sets env vars in run_tests.sh
-3. Check/Search for any TODOs
-4. Dev migrations have to stay in sync with the staging and production migrations. So, dev migrations should not be deleted.
+1. When the app is pushed from staging to production the AWS S3 files are not updated automatically
+    a. So commands such as python manage.py collectstatic have to be ran again for the static files to be updated
+2. If the domain name has change for staging or production the CORs allowed origins in the AWS S3 Bucket will need to be updated.
+3. Run tests before deploying. Tests should be ran with both sets env vars in run_tests.sh
+4. Check/Search for any TODOs
+5. Dev migrations have to stay in sync with the staging and production migrations. So, dev migrations should not be deleted.
