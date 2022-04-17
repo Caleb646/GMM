@@ -6,9 +6,10 @@ from django.http import HttpResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from . import forms as f
-from . import models as m
-from . import views as v
+from .. import forms as f
+from .. import models as m
+from .. import views as v
+from . import common
 
 
 class GmailCredentialsAdmin(admin.ModelAdmin):
@@ -69,11 +70,6 @@ class MyUserDashboardFilter(AutocompleteFilter):
     field_name = "owner"  # name of the foreign key field
 
 
-class UserThreadFilter(AutocompleteFilter):
-    title = "User"  # display title
-    field_name = "message_thread_initiator"  # name of the foreign key field
-
-
 class DashboardAdmin(admin.ModelAdmin):
     search_fields = ["owner__startswith"]
     list_display = ("owner", "slug", "detailed_view_button", "resend_button")
@@ -108,56 +104,6 @@ class ThreadTypeAdmin(admin.ModelAdmin):
     inlines = [ThreadTypeAltNameInline]
 
 
-class ThreadJobFilter(AutocompleteFilter):
-    title = "Job"  # display title
-    field_name = "job_id"  # name of the foreign key field
-
-
-class ThreadAdmin(admin.ModelAdmin):
-    search_fields = (
-        "subject__search",
-        # "message__body__search",
-        "message__vector_body_column",
-    )  #
-    list_filter = (
-        ThreadJobFilter,
-        UserThreadFilter,
-        "time_received",
-        "thread_type",
-        "thread_status",
-    )
-    list_display = (
-        "job_id",
-        "message_thread_initiator",
-        "subject",
-        "accepted_answer",
-        "thread_status",
-        "thread_type",
-        "time_received",
-        "due_date",
-        "detailed_view_button",
-    )
-
-    change_list_template = "admin/message_thread/change_list.html"
-
-    def detailed_view_button(self, object: m.Thread):
-        return format_html(
-            f"<a href={reverse('admin:message_thread_detailed_view', args=[object.id])}>View</a>",
-        )
-
-    def get_urls(self):
-        urls = super().get_urls()
-        # custom_urls have to be at the top of the list or django wont match them
-        custom_urls = [
-            path(
-                "<int:pk>/detailed/",
-                v.ThreadDetailedView.as_view(),
-                name="message_thread_detailed_view",
-            ),
-        ]
-        return custom_urls + urls
-
-
 class MessageAdmin(admin.ModelAdmin):
     list_display = (
         "message_id",
@@ -190,7 +136,7 @@ admin.site.register(m.MessageLog, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
 admin.site.register(m.ThreadType, ThreadTypeAdmin)
 # admin.site.register(m.ThreadTypeAltName, MessageThreadTypeAlternativeNameAdmin)
-admin.site.register(m.Thread, ThreadAdmin)
+admin.site.register(m.Thread, common.ThreadAdmin)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
 admin.site.register(m.GmailCredentials, GmailCredentialsAdmin)

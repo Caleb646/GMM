@@ -1,9 +1,12 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from . import admin as a
 from . import views as v
 
+
 urlpatterns = [
+    path("user/", a.user_admin_site.urls),
     path("", v.HomeView.as_view(), name="base_user_home"),
     path("login/", v.LoginView.as_view(), name="base_user_login"),
     path(

@@ -49,11 +49,13 @@ GROUPS = {
             # "message": ["view"],
         },
     },
-    # c.GROUP_NAME_RECEIVE_NOTIFICATIONS_USERS: {
-    #     "rfis" : {
-    #         "notifications": ["receive"]
-    #     },
-    # }
+    c.GROUP_NAME_PROJECT_MANAGER: {
+        "rfis": {
+            "job": ["view"],
+            "threadtype": ["view"],
+            "thread": ["change", "view"],
+        },
+    },
 }
 
 MESSAGE_TYPES = [

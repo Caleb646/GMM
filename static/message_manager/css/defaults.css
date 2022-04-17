@@ -1,6 +1,12 @@
 .default {
-    color: #212529;
-    background-color: #121212;
+    background-color: #fff;
+  }
+
+@media (prefers-color-scheme: dark) {
+    .default {
+        color: #212529;
+        background-color: #121212;
+    }
 }
 
 .mark {
