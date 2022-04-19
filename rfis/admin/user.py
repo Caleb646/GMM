@@ -23,6 +23,7 @@ class ThreadForm(forms.ModelForm):
         accepted_answer = self.cleaned_data.get("accepted_answer")
         thread_type = self.cleaned_data.get("thread_type")
         thread_status = self.cleaned_data.get("thread_status")
+        # print(self.cleaned_data)
         # if a thread is going to be closed then the above values have to be set correctly
         if thread_status == c.FIELD_VALUE_CLOSED_THREAD_STATUS:
             if job.name == c.FIELD_VALUE_UNKNOWN_JOB:
@@ -30,7 +31,7 @@ class ThreadForm(forms.ModelForm):
                     f"Job name cannot be {c.FIELD_VALUE_UNKNOWN_JOB} when closing a"
                     " message."
                 )
-            if thread_type == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
+            if thread_type.name == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
                 raise ValidationError(
                     "The thread type cannot be"
                     f" {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when closing a message."
@@ -114,8 +115,8 @@ class ThreadAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         """
-        Return a QuerySet of all model instances that can be edited by the
-        admin site. This is used by changelist_view.
+        Allows only super and staff users to see every thread in the database where as a regular
+        user can only see messages they initiated.
         """
         if (
             request.user.is_superuser or request.user.is_staff
@@ -133,7 +134,7 @@ class ThreadAdmin(admin.ModelAdmin):
 
     def detailed_view_button(self, object: m.Thread):
         return format_html(
-            f"<a href={reverse('user:message_thread_detailed_view', args=[object.id])}>View</a>",
+            f"<a href={reverse('user:message_thread_detailed_view', args=[object.id])} target='_blank'>View</a>",
         )
 
     def get_urls(self):

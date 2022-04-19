@@ -18,6 +18,11 @@ class MyUserSearchView(AutocompleteJsonView, LoginRequiredMixin):
     model_admin = None
 
     def get_queryset(self):
+        # sourcery skip: assign-if-exp, reintroduce-else, swap-if-expression
+        if not (
+            self.request.user.is_superuser or self.request.user.is_staff
+        ):  # only super or staff users can search by user
+            return m.MyUser.objects.none()
         return m.MyUser.objects.all().order_by("email")
 
 
