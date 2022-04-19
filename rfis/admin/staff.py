@@ -20,15 +20,10 @@ class MyUserDashboardFilter(AutocompleteFilter):
 
 class DashboardAdmin(admin.ModelAdmin):
     search_fields = ["owner__startswith"]
-    list_display = ("owner", "slug", "detailed_view_button", "resend_button")
+    list_display = ("owner", "slug", "resend_button")
     list_filter = (MyUserDashboardFilter,)
     add_form = f.DashboardCreateForm
     form = f.DashboardChangeForm
-
-    def detailed_view_button(self, object: m.MessageLog):
-        return format_html(
-            f"<a href={reverse('message_log_detailed', args=[object.slug])}>View</a>",
-        )
 
     def resend_button(self, object: m.MessageLog):
         return format_html(
