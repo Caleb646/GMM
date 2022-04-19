@@ -1,4 +1,5 @@
 import dateparser
+from admin_searchable_dropdown.views import AutocompleteJsonView
 from constance import config
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -19,37 +20,15 @@ from .. import gmail_service
 from .. import models as m
 
 
-class ThreadDetailedView(LoginRequiredMixin, UserPassesTestMixin, View):
-    template_name = "admin/message_thread/detailed.html"
-    login_url = reverse_lazy("admin:login")
-
-    def get(self, request, *args, **kwargs):
-        message_thread = m.Thread.objects.get(pk=kwargs["pk"])
-        messages = m.Message.objects.filter(message_thread_id=message_thread)
-        attachments = m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
-        return render(
-            request,
-            self.template_name,
-            {"my_messages": messages, "my_attachments": attachments},
-        )
-
-    def test_func(self):
-        return self.request.user.is_superuser or self.request.user.is_staff
-
-
 class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
     login_url = reverse_lazy("admin:login")
 
     def get(self, request, *args, **kwargs):
         dashboard = m.MessageLog.objects.get(slug=kwargs["slug"])
-        total_open_messages = m.Thread.objects.filter(  # TODO this should be made into a method on the Thread Manager class
-            message_thread_initiator=dashboard.owner,
-            thread_status=m.Thread.ThreadStatus.OPEN,
-        ).count()
+        total_open_messages = m.Thread.objects.open_messages(dashboard.owner).count()
         ctx = {
             "open_message_count": total_open_messages,
-            "dashboard_link": settings.DOMAIN_URL
-            + reverse("message_log_detailed", args=[dashboard.slug]),
+            "dashboard_link": c.OPEN_MESSAGES_URL,
         }
         message_body = render_to_string("email_notifications/open_message.html", ctx)
         send_mail(

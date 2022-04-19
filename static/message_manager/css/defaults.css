@@ -1,10 +1,11 @@
 .default {
+    color: #121212;
     background-color: #fff;
   }
 
 @media (prefers-color-scheme: dark) {
     .default {
-        color: #212529;
+        color: #ffffff;
         background-color: #121212;
     }
 }

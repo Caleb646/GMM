@@ -1,20 +1,25 @@
-{% extends "rfis/base.html" %}
+{% extends "admin/base.html" %}
 {% load i18n static %}
 {% load tz %}
+
+{% block extrastyle %}
+{{ block.super }}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+{% endblock %}
 
 {% block content %}
     {% timezone DEFAULT_TIMEZONE %}
     {{block.super}}
-    <div class="container-fluid">
+    <div class="container-fluid default">
         {% for my_message in my_messages %}
-            <div class="row bg-dark text-white p-2 m-2">
-                <div class="card bg-dark text-white" style="">
-                    <div class="card-body text-white">
+            <div class="row default p-2 m-2">
+                <div class="card default">
+                    <div class="card-body default">
                         <h6 class="card-subtitle mb-2">Subject: {{ my_message.subject }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted">From: {{ my_message.fromm }}</h6>
                         <h6 class="card-subtitle mb-2 ">To: {{ my_message.to }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted">Received: {{ my_message.time_received }} {{DEFAULT_TIMEZONE}}</h6>
-                        <pre style="white-space: pre-wrap;" class="card-text" id="my_message_{{my_message.id}}">{{ my_message.debug_unparsed_body }}
+                        <pre style="white-space: pre-wrap;" class="card-text default" id="my_message_{{my_message.id}}">{{ my_message.debug_unparsed_body }}
                             {% comment %} <a href="#" class="card-link">...More<a> {% endcomment %}
                             {% comment %} <div>
                                 <pre class="card-text text-warning" style="white-space: pre-wrap;">{{ my_message.debug_unparsed_body }}</pre>

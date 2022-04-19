@@ -42,10 +42,10 @@ GROUPS = {
     c.GROUP_NAME_STAFF_USERS: {
         "rfis": {
             "myuser": ["add", "change", "view"],
-            "messagelog": ["view"],
+            # "messagelog": ["view"],
             "job": ["add", "change", "view"],
             "thread": ["change", "view"],
-            "threadtype": ["change", "view"],
+            "threadtype": ["add", "change", "view"],
             # "message": ["view"],
         },
     },

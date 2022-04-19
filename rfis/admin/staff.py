@@ -1,68 +1,16 @@
 from admin_searchable_dropdown.filters import AutocompleteFilter
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
-from django.http import HttpResponse
-from django.urls import path, reverse
+from django.urls import reverse
 from django.utils.html import format_html
 
 from .. import forms as f
 from .. import models as m
-from .. import views as v
 from . import common
 
 
 class GmailCredentialsAdmin(admin.ModelAdmin):
     pass
-
-
-class MyUserAdmin(UserAdmin):
-
-    add_form = f.MyUserCreateForm
-    form = f.MyUserChangeForm
-    model = m.MyUser
-    list_display = (
-        "email",
-        "can_notify",
-        "is_superuser",
-        "is_staff",
-        "is_active",
-    )
-    list_filter = (
-        "groups",
-        "can_notify",
-        "is_superuser",
-        "is_staff",
-        "is_active",
-    )
-    fieldsets = (
-        (None, {"fields": ("email", "password")}),
-        (
-            "Permissions",
-            {"fields": ("can_notify", "is_superuser", "is_staff", "is_active")},
-        ),
-        ("Groups", {"fields": ("groups",)}),
-    )
-    add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": (
-                    "email",
-                    "password1",
-                    "password2",
-                    "groups",
-                    "can_notify",
-                    "is_superuser",
-                    "is_staff",
-                    "is_active",
-                ),
-            },
-        ),
-    )
-    search_fields = ("email__startswith",)
-    ordering = ("email", "groups")
 
 
 class MyUserDashboardFilter(AutocompleteFilter):
@@ -131,12 +79,12 @@ class PermissionAdmin(admin.ModelAdmin):
 
 admin.site.site_header = "Dashboard"
 admin.site.site_title = "Dashboard"
-admin.site.register(m.MyUser, MyUserAdmin)
+admin.site.register(m.MyUser, common.MyUserAdmin)
 admin.site.register(m.MessageLog, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
 admin.site.register(m.ThreadType, ThreadTypeAdmin)
 # admin.site.register(m.ThreadTypeAltName, MessageThreadTypeAlternativeNameAdmin)
-admin.site.register(m.Thread, common.ThreadAdmin)
+admin.site.register(m.Thread)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
 admin.site.register(m.GmailCredentials, GmailCredentialsAdmin)

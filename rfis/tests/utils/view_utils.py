@@ -10,7 +10,8 @@ from django.urls import reverse_lazy
 from .universal_utils import PASSWORD
 
 ADMIN_LOGIN = reverse_lazy("admin:login")
-USER_LOGIN = reverse_lazy("base_user_login")
+USER_ADMIN_LOGIN = reverse_lazy("user:login")
+USER_LOGIN = reverse_lazy("user:login")
 client = Client()
 
 

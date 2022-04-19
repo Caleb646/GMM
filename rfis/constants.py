@@ -1,5 +1,7 @@
 from django.conf import settings
 
+OPEN_MESSAGES_URL = settings.DOMAIN_URL + "/user/rfis/thread/?thread_status__exact=OPEN"
+
 GMAIL_REDIRECT_URI = settings.DOMAIN_URL + "/gmail-api/gmail-oauth-callback/"
 GMAIL_API_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",

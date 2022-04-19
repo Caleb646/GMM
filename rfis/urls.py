@@ -1,36 +1,8 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from . import admin as a
 from . import views as v
 
-
 urlpatterns = [
-    path("user/", a.user_admin_site.urls),
-    path("", v.HomeView.as_view(), name="base_user_home"),
-    path("login/", v.LoginView.as_view(), name="base_user_login"),
-    path(
-        "reset-password/", v.ResetPasswordView.as_view(), name="base_user_reset_password"
-    ),
-    path(
-        "reset-password-confirm/<uidb64>/<token>/",
-        auth_views.PasswordResetConfirmView.as_view(
-            template_name="auth/reset_password_confirm.html"
-        ),
-        name="base_user_reset_password_confirm",
-    ),
-    path(
-        "reset-password-complete/",
-        auth_views.PasswordResetCompleteView.as_view(
-            template_name="auth/reset_password_complete.html"
-        ),
-        name="password_reset_complete",
-    ),
-    path(
-        "message-log/<slug:slug>/detailed/",
-        v.MessageLogView.as_view(),
-        name="message_log_detailed",
-    ),
     path(
         "message-log/<slug:slug>/resend/",
         v.MessageLogResendView.as_view(),

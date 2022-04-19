@@ -19,9 +19,9 @@ CRON_USER_NAME = os.environ["CRON_USER_NAME"]
 CRON_USER_PASSWORD = os.environ["CRON_USER_PASSWORD"]
 
 
-LOGIN_URL = "/login/"
-LOGIN_REDIRECT_URL = "/login/"
-LOGOUT_REDIRECT_URL = "/login/"
+LOGIN_URL = "/user/login/"
+LOGIN_REDIRECT_URL = "/user/login/"
+LOGOUT_REDIRECT_URL = "/user/login/"
 
 
 INSTALLED_APPS = [

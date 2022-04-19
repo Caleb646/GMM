@@ -124,23 +124,18 @@ def gmail_get_unread_messages(request, *args, **kwargs):
 
 @u.logged_in_or_basicauth()
 def notify_users_of_open_messages(request, *args, **kwargs):
-    # TODO only users with the can_notify will receive an email.
-    # may need to change this with a setting in the future
-    all_users = get_user_model().objects.filter(
-        can_notify=True
+    all_users = (
+        get_user_model().objects.notifiable_users()
     )  # u.get_users_with_permission("rfis.receive_notifications", include_su=False)
     messages = []
     for user in all_users:
-        total_open_messages = m.Thread.objects.filter(
-            message_thread_initiator=user, thread_status=m.Thread.ThreadStatus.OPEN
-        ).count()
+        total_open_messages = m.Thread.objects.open_messages(user).count()
         if total_open_messages == 0:  # only send an email to users with open messages
             continue
         user_dashboard, created = m.MessageLog.objects.get_or_create(owner=user)
         ctx = {
             "open_message_count": total_open_messages,
-            "dashboard_link": settings.DOMAIN_URL
-            + reverse("message_log_detailed", args=[user_dashboard.slug]),
+            "dashboard_link": c.OPEN_MESSAGES_URL,
         }
         message_body = render_to_string("email_notifications/open_message.html", ctx)
         send_mail(

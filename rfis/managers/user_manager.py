@@ -41,6 +41,9 @@ class UserManager(BaseUserManager):
         kwargs.setdefault("password", str(uuid.uuid4()))
         return (self.create_user(**kwargs), True)
 
+    def notifiable_users(self):
+        return self.filter(can_notify=True)
+
     def reset_password(self, password):
         self.set_password(password)
         self.save()
