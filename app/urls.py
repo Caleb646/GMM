@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf.urls import handler400, handler403, handler404, handler500
 from rfis.admin import user_admin_site
 
 urlpatterns = [
@@ -22,3 +23,8 @@ urlpatterns = [
     path("user/", user_admin_site.urls),
     path("", include("rfis.urls")),
 ]
+
+handler400 = "rfis.views.bad_request"
+handler403 = "rfis.views.permission_denied"
+handler404 = "rfis.views.page_not_found"
+handler500 = "rfis.views.server_error"
