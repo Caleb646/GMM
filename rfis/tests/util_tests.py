@@ -49,6 +49,76 @@ class UtilsTestCase(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
 
+    def test_can_close_thread(self):
+        unknown_job = m.Job.objects.get(name=c.FIELD_VALUE_UNKNOWN_JOB)
+        valid_job = m.Job.objects.get(name="Test Job")
+
+        unknown_thread_type = m.ThreadType.objects.get(
+            name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE
+        )
+        valid_thread_type = m.ThreadType.objects.get(name="RFI")
+
+        empty_accepted_answer = ""
+        valid_answer = "test answer"
+
+        thread_status_close = c.FIELD_VALUE_CLOSED_THREAD_STATUS
+        thread_status_open = c.FIELD_VALUE_OPEN_THREAD_STATUS
+
+        def create_clean_data(job, ttype, answer, status):
+            return {
+                "job_id": job,
+                "accepted_answer": answer,
+                "thread_type": ttype,
+                "thread_status": status,
+            }
+
+        should_fail = [
+            [
+                unknown_job,
+                unknown_thread_type,
+                empty_accepted_answer,
+                thread_status_close,
+            ],
+            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_close],
+            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_close],
+            [unknown_job, unknown_thread_type, valid_answer, thread_status_close],
+            [unknown_job, valid_thread_type, valid_answer, thread_status_close],
+            [valid_job, valid_thread_type, empty_accepted_answer, thread_status_close],
+        ]
+
+        should_pass = [
+            [unknown_job, unknown_thread_type, empty_accepted_answer, thread_status_open],
+            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_open],
+            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_open],
+            [unknown_job, unknown_thread_type, valid_answer, thread_status_open],
+            [unknown_job, valid_thread_type, valid_answer, thread_status_open],
+            [valid_job, valid_thread_type, valid_answer, thread_status_close],
+        ]
+
+        for data in should_fail:
+            j, tt, ans, st = data
+            can_close, error_msg = u.can_close_thread(
+                create_clean_data(
+                    j,
+                    tt,
+                    ans,
+                    st,
+                )
+            )
+            self.assertEqual(can_close, False)
+
+        for data in should_pass:
+            j, tt, ans, st = data
+            can_close, error_msg = u.can_close_thread(
+                create_clean_data(
+                    j,
+                    tt,
+                    ans,
+                    st,
+                )
+            )
+            self.assertEqual(can_close, True)
+
     def test_should_create_thread(self):
         thread = m.Thread.objects.all().first()
         self.assertEqual(u.should_create_thread(thread.gmail_thread_id, ""), True)

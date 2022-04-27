@@ -11,6 +11,10 @@ class JobSearchView(AutocompleteJsonView, LoginRequiredMixin):
     model_admin = None
 
     def get_queryset(self):
+        if field_value := self.request.GET.get("term"):
+            return m.Job.objects.filter(**{"name__icontains": field_value}).order_by(
+                "name"
+            )
         return m.Job.objects.all().order_by("name")
 
 
@@ -23,6 +27,9 @@ class MyUserSearchView(AutocompleteJsonView, LoginRequiredMixin):
             self.request.user.is_superuser or self.request.user.is_staff
         ):  # only super or staff users can search by user
             return m.MyUser.objects.none()
+        if field_value := self.request.GET.get("term"):
+            field_name = "email__icontains"
+            return m.MyUser.objects.filter(**{field_name: field_value}).order_by("email")
         return m.MyUser.objects.all().order_by("email")
 
 

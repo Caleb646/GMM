@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 from thefuzz import fuzz, process
 
+from . import constants as c
 from . import models as m
 
 
@@ -27,6 +28,36 @@ def load_file(path, transform_file=lambda f: f, mode="rb"):
         file.close()
         return data
     return transform_file(default_storage.open(tail, mode))
+
+
+def can_close_thread(cleaned_form_data: dict):
+    job = cleaned_form_data.get("job_id")  # an instance of the Job model
+    accepted_answer = cleaned_form_data.get("accepted_answer")
+    thread_type = cleaned_form_data.get("thread_type")
+    thread_status = cleaned_form_data.get("thread_status")
+    # print(self.cleaned_data)
+    # if a thread is going to be closed then the above values have to be set correctly
+    if thread_status == c.FIELD_VALUE_CLOSED_THREAD_STATUS:
+        if job.name == c.FIELD_VALUE_UNKNOWN_JOB:
+            return (
+                False,
+                f"Job name cannot be {c.FIELD_VALUE_UNKNOWN_JOB} when closing a message.",
+            )
+
+        if thread_type.name == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
+            return (
+                False,
+                f"The thread type cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when"
+                " closing a message.",
+            )
+
+        if not accepted_answer:
+            return (
+                False,
+                "The accepted answer has to be filled out when closing a message. If an"
+                " accepted answer is not applicable type N/A in the field.",
+            )
+    return True, ""
 
 
 def should_create_thread(gmail_thread_id, from_email):

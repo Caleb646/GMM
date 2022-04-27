@@ -48,7 +48,7 @@ class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
 
 
 class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
-    login_url = reverse_lazy("admin:login")
+    login_url = reverse_lazy("user:login")
 
     def get(self, request, format=None):
         # If modifying these scopes

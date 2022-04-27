@@ -7,3 +7,4 @@ python manage.py migrate rfis
 python manage.py migrate database
 python manage.py migrate
 python manage.py initialsetup
+python manage.py collectstatic --noinput

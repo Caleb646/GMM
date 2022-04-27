@@ -13,34 +13,16 @@ from django.utils.translation import gettext as _
 
 from .. import constants as c
 from .. import models as m
+from .. import utils as u
 from .. import views as v
 from . import common
 
 
 class ThreadForm(forms.ModelForm):
     def clean(self):
-        job = self.cleaned_data.get("job_id")  # an instance of the Job model
-        accepted_answer = self.cleaned_data.get("accepted_answer")
-        thread_type = self.cleaned_data.get("thread_type")
-        thread_status = self.cleaned_data.get("thread_status")
-        # print(self.cleaned_data)
-        # if a thread is going to be closed then the above values have to be set correctly
-        if thread_status == c.FIELD_VALUE_CLOSED_THREAD_STATUS:
-            if job.name == c.FIELD_VALUE_UNKNOWN_JOB:
-                raise ValidationError(
-                    f"Job name cannot be {c.FIELD_VALUE_UNKNOWN_JOB} when closing a"
-                    " message."
-                )
-            if thread_type.name == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
-                raise ValidationError(
-                    "The thread type cannot be"
-                    f" {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when closing a message."
-                )
-            if not accepted_answer or accepted_answer == "":
-                raise ValidationError(
-                    "The accepted answer has to be filled out when closing a message."
-                    " If an accepted answer is not applicable type N/A in the field."
-                )
+        can_close, error_message = u.can_close_thread(self.cleaned_data)
+        if not can_close:
+            raise ValidationError(error_message)
         return super().clean()
 
 
