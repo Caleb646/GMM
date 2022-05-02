@@ -18,6 +18,7 @@
                         <h6 class="card-subtitle mb-2">Subject: {{ my_message.subject }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted">From: {{ my_message.fromm }}</h6>
                         <h6 class="card-subtitle mb-2 ">To: {{ my_message.to }}</h6>
+                        <h6 class="card-subtitle mb-2 ">CC: {{ my_message.cc }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted">Received: {{ my_message.time_received }} {{DEFAULT_TIMEZONE}}</h6>
                         <pre style="white-space: pre-wrap;" class="card-text default" id="my_message_{{my_message.id}}">{{ my_message.debug_unparsed_body }}
                             {% comment %} <a href="#" class="card-link">...More<a> {% endcomment %}

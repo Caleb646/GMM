@@ -164,7 +164,9 @@ class Thread(models.Model):
         return super().save(*args, **kwargs)
 
     class Meta:
-        ordering = ["due_date"]
+        ordering = [
+            "-time_received"
+        ]  # should be descending order. Newest threads should be first
 
     def __str__(self):
         return self.subject
@@ -186,7 +188,9 @@ class Message(models.Model):
     objects = mg.MessageManager()
 
     class Meta:
-        ordering = ["time_received"]
+        ordering = [
+            "-time_received"
+        ]  # should be descending order. Newest messages should be first
         indexes = (GinIndex(fields=["vector_body_column"]),)
 
     def save(self, *args, **kwargs):
