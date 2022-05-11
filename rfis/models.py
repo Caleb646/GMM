@@ -117,8 +117,10 @@ class ThreadTypeAltName(models.Model):
 
 
 class Thread(models.Model):
+    class Meta:
+        verbose_name = "Message Thread"
     gmail_thread_id = models.CharField(max_length=200, unique=True)
-    job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id))
+    job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id), verbose_name="Job")
 
     subject = models.CharField(max_length=400)
 
@@ -126,6 +128,7 @@ class Thread(models.Model):
         ThreadType,
         default=ThreadType.get_message_type_sentinel_id,
         on_delete=models.SET(ThreadType.get_message_type_sentinel_id),
+        verbose_name="Type"
     )
 
     time_received = models.DateTimeField()
@@ -139,17 +142,18 @@ class Thread(models.Model):
         max_length=15,
         choices=ThreadStatus.choices,
         default=ThreadStatus.OPEN,
+        verbose_name="Status"
     )
 
     # if the person who started the thread is a Thomas Builders employee we can send them notifications
     message_thread_initiator = models.ForeignKey(
-        MyUser, on_delete=models.SET(MyUser.get_user_sentinel_id)
+        MyUser, on_delete=models.SET(MyUser.get_user_sentinel_id), verbose_name="Sender"
     )  # models.CharField(max_length=200)
     # If a user is deleted by accident the message_thread_initiator will be set to the first admin user.
     # To know who was the original owner of the thread save it here
     original_initiator = models.CharField(max_length=300)
     # blank=True has to be set or the field will be required in any model form
-    accepted_answer = models.TextField(default="", blank=True)
+    accepted_answer = models.TextField(default="", blank=True, verbose_name="Answer")
 
     objects = mg.ThreadManager()
 
@@ -161,6 +165,8 @@ class Thread(models.Model):
             self.time_received = timezone.now()
         if not self.original_initiator:
             self.original_initiator = self.message_thread_initiator.email
+        if not self.subject:
+            self.subject = "(No Subject)"
         return super().save(*args, **kwargs)
 
     class Meta:
