@@ -68,9 +68,21 @@ class ThreadAdmin(admin.ModelAdmin):
     list_per_page = 15
     readonly_fields = [
         "gmail_thread_id",
+        "time_received",
+        "original_initiator",
+        "message_thread_initiator",
+        "subject"
     ]
     list_editable = ("job_id", "accepted_answer", "thread_status", "thread_type")
     change_list_template = "admin/message_thread/change_list.html"
+
+    def get_readonly_fields(self, request, obj):
+        """
+        Only a super user can edit all of the fields
+        """
+        if request.user.is_superuser:
+            return []
+        return self.readonly_fields
 
     def get_changelist_form(self, request, **kwargs):
         """
