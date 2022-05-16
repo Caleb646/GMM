@@ -60,6 +60,13 @@ def can_close_thread(cleaned_form_data: dict):
     return True, ""
 
 
+def get_user_from_email_address(email_address):
+    user = get_user_model().objects.filter(email=email_address)
+    if user.exists():
+        return user 
+    return None
+
+
 def should_create_thread(gmail_thread_id, from_email):
     """
     Cases:
@@ -69,10 +76,11 @@ def should_create_thread(gmail_thread_id, from_email):
         Both User and the Thread do not exist -> False
     """
     # TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
-    return bool(
-        get_user_model().objects.filter(email=from_email).exists()
-        or m.Thread.objects.filter(gmail_thread_id=gmail_thread_id).exists()
-    )
+
+    user = get_user_from_email_address(from_email)
+    if user:
+        return True
+    return m.Thread.objects.filter(gmail_thread_id=gmail_thread_id).exists()
 
 
 def create_db_entry_from_parser(
