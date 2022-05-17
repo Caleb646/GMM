@@ -20,7 +20,7 @@ from . import models as m
 
 import logging
 # Get an instance of a logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def load_file(path, transform_file=lambda f: f, mode="rb"):

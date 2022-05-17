@@ -39,12 +39,6 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {
-            "level": "INFO",
-            #"filters": ["require_debug_true"],
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
-        },
         "mail_admins": {
             "level": "ERROR",
             "filters": ["require_debug_false"],
@@ -57,32 +51,32 @@ LOGGING = {
     "loggers": {
         "": {  # root logger
             "handlers": ["logdna"],
-            "level": "INFO",
+            "level": logging.INFO,
             "propagate": True,
         },
         "django": {
-            "level": "WARNING",
-            "handlers": ["console"],
+            "level": logging.WARN,
+            "handlers": ["logdna"],
             "propagate": True,
         },
         "django.request": {
             "handlers": ["mail_admins"],
-            "level": "ERROR",
+            "level": logging.ERROR,
             "propagate": False,
         },
         "django.db.backends": {
             "handlers": ["mail_admins"],
-            "level": "ERROR",
+            "level": logging.ERROR,
             "propagate": False,
         },
         "django.security.*": {
             "handlers": ["mail_admins"],
-            "level": "ERROR",
+            "level": logging.ERROR,
             "propagate": False,
         },
         "django.db.backends.schema": {
             "handlers": ["mail_admins"],
-            "level": "ERROR",
+            "level": logging.ERROR,
             "propagate": False,
         },
     },
