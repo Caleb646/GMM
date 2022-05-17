@@ -18,6 +18,10 @@ from thefuzz import fuzz, process
 from . import constants as c
 from . import models as m
 
+import logging
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
+
 
 def load_file(path, transform_file=lambda f: f, mode="rb"):
     head, tail = os.path.split(path)
@@ -59,14 +63,6 @@ def can_close_thread(cleaned_form_data: dict):
             )
     return True, ""
 
-
-def get_user_from_email_address(email_address):
-    user = get_user_model().objects.filter(email=email_address)
-    if user.exists():
-        return user 
-    return None
-
-
 def should_create_thread(gmail_thread_id, from_email):
     """
     Cases:
@@ -77,10 +73,10 @@ def should_create_thread(gmail_thread_id, from_email):
     """
     # TODO if user doesnt exist dont accept a message from them. May need to add a setting for this
 
-    user = get_user_from_email_address(from_email)
-    if user:
-        return True
-    return m.Thread.objects.filter(gmail_thread_id=gmail_thread_id).exists()
+    user_exists = get_user_model().objects.filter(email=from_email).exists()
+    thread_exists = m.Thread.objects.filter(gmail_thread_id=gmail_thread_id).exists()
+    logger.info(f"function: should_create_thread || thread id: {gmail_thread_id} || email address: {from_email} || user_exists: {user_exists} || thread_exists: {thread_exists}")
+    return user_exists or thread_exists
 
 
 def create_db_entry_from_parser(
@@ -88,7 +84,10 @@ def create_db_entry_from_parser(
 ) -> bool:
     g_parser.parse(gmail_message)
     if not should_create_thread(g_parser.thread_id, g_parser.fromm):
+        logger.info(f"Not creating thread for user || function: create_db_entry_from_parser || thread id: {g_parser.thread_id} || from email address: {g_parser.fromm}")
         return False
+
+    logger.info(f"Creating thread for user || function: create_db_entry_from_parser || thread info: {repr(g_parser)}")
     time_message_received = dateparser.parse(
         g_parser.date,
         settings={
@@ -168,14 +167,17 @@ def process_multiple_gmail_threads(
     service, g_parser, query_params="label:inbox is:unread"
 ):
     unread_threads = service.get_threads(query_params)
+    if not unread_threads:
+        logger.warn(f"0 unread threads || function: process_multiple_gmail_threads || query_params: {query_params}")
     read_messages: list[list[int]] = []
     for thread_info in unread_threads:
         thread = service.get_thread(thread_info["id"])
         read_messages.append(
             process_single_gmail_thread(thread.get("messages"), g_parser)
         )
-
-    return list(itertools.chain(*read_messages))
+    msg_ids = list(itertools.chain(*read_messages))
+    logger.info(f"Message ids that will be marked as read || function: process_multiple_gmail_threads || message ids: {msg_ids}")
+    return msg_ids
 
 
 def get_permission_object(permission_str):  # rfis.view_message

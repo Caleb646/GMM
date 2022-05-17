@@ -37,9 +37,11 @@ LOGGING = {
     "loggers": {
         "": {  # root logger
             "handlers": ["console"],
+            "level": "INFO",
             "propagate": True,
         },
         "django": {
+            "level": "WARNING",
             "handlers": ["console"],
             "propagate": True,
         },
