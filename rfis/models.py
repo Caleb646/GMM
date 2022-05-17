@@ -74,7 +74,7 @@ class MessageLog(models.Model):
 
 
 class Job(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=200, unique=True)
     start_date = models.DateTimeField()
 
     objects = mg.JobManager()
@@ -119,10 +119,10 @@ class ThreadTypeAltName(models.Model):
 class Thread(models.Model):
     class Meta:
         verbose_name = "Message Thread"
-    gmail_thread_id = models.CharField(max_length=200, unique=True)
+    gmail_thread_id = models.CharField(max_length=400, unique=True)
     job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id), verbose_name="Job")
 
-    subject = models.CharField(max_length=400)
+    subject = models.CharField(max_length=500)
 
     thread_type = models.ForeignKey(
         ThreadType,
@@ -139,7 +139,7 @@ class Thread(models.Model):
         CLOSED = c.FIELD_VALUE_CLOSED_THREAD_STATUS
 
     thread_status = models.CharField(
-        max_length=15,
+        max_length=25,
         choices=ThreadStatus.choices,
         default=ThreadStatus.OPEN,
         verbose_name="Status"
@@ -151,7 +151,7 @@ class Thread(models.Model):
     )  # models.CharField(max_length=200)
     # If a user is deleted by accident the message_thread_initiator will be set to the first admin user.
     # To know who was the original owner of the thread save it here
-    original_initiator = models.CharField(max_length=300)
+    original_initiator = models.CharField(max_length=500)
     # blank=True has to be set or the field will be required in any model form
     accepted_answer = models.TextField(default="", blank=True, verbose_name="Answer")
 
@@ -179,13 +179,13 @@ class Thread(models.Model):
 
 
 class Message(models.Model):
-    message_id = models.CharField(max_length=200, unique=True)
+    message_id = models.CharField(max_length=400, unique=True)
     message_thread_id = models.ForeignKey(Thread, on_delete=models.CASCADE)
-    subject = models.CharField(max_length=400)
+    subject = models.CharField(max_length=1000)
     body = models.TextField(default="")
     debug_unparsed_body = models.TextField(default="")
-    fromm = models.CharField(max_length=100)
-    to = models.CharField(max_length=200)
+    fromm = models.CharField(max_length=1000)
+    to = models.CharField(max_length=1000)
     cc = models.CharField(max_length=1000, blank=True)
     time_received = models.DateTimeField()
 

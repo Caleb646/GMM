@@ -3,7 +3,6 @@ import logging
 from logdna import LogDNAHandler #  required to register `logging.handlers.LogDNAHandler`
 
 if log_dna_key := os.environ.get("LOGDNA_KEY"):
-    print("Log dna key: ", log_dna_key, type(log_dna_key))
     logdna_handler = {
             'level': "INFO",
             'class': 'logging.handlers.LogDNAHandler',
@@ -13,7 +12,7 @@ if log_dna_key := os.environ.get("LOGDNA_KEY"):
 else:
     logdna_handler = {
             "level": "INFO",
-            "filters": ["require_debug_true"],
+            #"filters": ["require_debug_true"],
             "class": "logging.StreamHandler",
             "formatter": "simple",
         }
@@ -41,8 +40,8 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
-            "filters": ["require_debug_true"],
+            "level": "INFO",
+            #"filters": ["require_debug_true"],
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
