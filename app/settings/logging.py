@@ -4,14 +4,14 @@ from logdna import LogDNAHandler #  required to register `logging.handlers.LogDN
 
 if log_dna_key := os.environ.get("LOGDNA_KEY"):
     logdna_handler = {
-            'level': "INFO",
+            'level': logging.INFO,
             'class': 'logging.handlers.LogDNAHandler',
             'key': log_dna_key,
         }
 
 else:
-    logdna_handler = {
-            "level": "INFO",
+    logdna_handler = { # if logdna key isnt present default to console logging
+            "level": logging.INFO,
             #"filters": ["require_debug_true"],
             "class": "logging.StreamHandler",
             "formatter": "simple",
@@ -40,7 +40,7 @@ LOGGING = {
     },
     "handlers": {
         "mail_admins": {
-            "level": "ERROR",
+            "level": logging.ERROR,
             "filters": ["require_debug_false"],
             "class": "django.utils.log.AdminEmailHandler",
             "formatter": "verbose",
@@ -62,22 +62,22 @@ LOGGING = {
         "django.request": {
             "handlers": ["mail_admins"],
             "level": logging.ERROR,
-            "propagate": False,
+            "propagate": True,
         },
         "django.db.backends": {
             "handlers": ["mail_admins"],
             "level": logging.ERROR,
-            "propagate": False,
+            "propagate": True,
         },
         "django.security.*": {
             "handlers": ["mail_admins"],
             "level": logging.ERROR,
-            "propagate": False,
+            "propagate": True,
         },
         "django.db.backends.schema": {
             "handlers": ["mail_admins"],
             "level": logging.ERROR,
-            "propagate": False,
+            "propagate": True,
         },
     },
 }
