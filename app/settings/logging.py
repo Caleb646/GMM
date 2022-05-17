@@ -1,3 +1,22 @@
+import os
+import logging
+from logdna import LogDNAHandler #  required to register `logging.handlers.LogDNAHandler`
+
+if log_dna_key := os.environ.get("LOGDNA_KEY"):
+    logdna_handler = {
+            'level': logging.DEBUG,
+            'class': 'logging.handlers.LogDNAHandler',
+            'key': log_dna_key,
+        },
+
+else:
+    logdna_handler = {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -33,10 +52,11 @@ LOGGING = {
             "formatter": "verbose",
             "include_html": True,
         },
+        "logdna" : logdna_handler
     },
     "loggers": {
         "": {  # root logger
-            "handlers": ["console"],
+            "handlers": ["logdna"],
             "level": "INFO",
             "propagate": True,
         },
