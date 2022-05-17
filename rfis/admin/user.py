@@ -71,7 +71,7 @@ class ThreadAdmin(admin.ModelAdmin):
         "time_received",
         "original_initiator",
         "message_thread_initiator",
-        "subject"
+        "subject",
     ]
     list_editable = ("job_id", "accepted_answer", "thread_status", "thread_type")
     change_list_template = "admin/message_thread/change_list.html"

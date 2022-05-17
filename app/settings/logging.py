@@ -7,6 +7,9 @@ if log_dna_key := os.environ.get("LOGDNA_KEY"):
             'level': logging.INFO,
             'class': 'logging.handlers.LogDNAHandler',
             'key': log_dna_key,
+            'options': {
+                'app': os.environ.get("APP_NAME", "root[logger]"),
+            },
         }
 
 else:
