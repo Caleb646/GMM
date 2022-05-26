@@ -41,7 +41,7 @@ class AdminTestCase(TestCase):
                 url, "", 302, testu.redirect_join(testu.ADMIN_LOGIN, url)
             )
             # TODO FIX: regular user can access resend message log page
-            testu.auth_check(url, "test1", 403)
+            testu.auth_check(url, "test1", 403, False)
             testu.auth_check(url, "staff", 200)
             testu.auth_check(url, "admin", 200)
             email_message = mail.EmailMessage(
@@ -56,7 +56,6 @@ class AdminTestCase(TestCase):
         testu.redirect_auth_check(
             url, "", 302, testu.redirect_join(testu.USER_ADMIN_LOGIN, url)
         )
-        # TODO FIX: regular user can access authorize gmail creds page
-        testu.auth_check(url, "test1", 403)
-        testu.auth_check(url, "staff", 403)
+        testu.auth_check(url, "test1", 403, False)
+        testu.auth_check(url, "staff", 403, False)
         testu.auth_check(url, "admin", 302)  # should be a redirect to the google prompt

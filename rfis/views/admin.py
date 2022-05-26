@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core import serializers
 from django.core.mail import send_mail, send_mass_mail
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -49,6 +49,7 @@ class MessageLogResendView(LoginRequiredMixin, UserPassesTestMixin, View):
 
 class GmailAuthorize(LoginRequiredMixin, UserPassesTestMixin, View):
     login_url = reverse_lazy("user:login")
+    #raise_exception = True
 
     def get(self, request, format=None):
         # If modifying these scopes

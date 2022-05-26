@@ -19,11 +19,12 @@ def email_password_to_http_auth(email):
     return base64.b64encode(bytes(f"{email}:{PASSWORD}", "utf8")).decode("utf8")
 
 
-def auth_check(url, email, status_code):
+def auth_check(url, email, status_code, follow=True):
     client.login(email=email, password=PASSWORD)
-    response = client.get(url, follow=True)
+    response = client.get(url, follow=follow)
     client.logout()
-    if response.redirect_chain:
+    #print(response.__dict__)
+    if follow and response.redirect_chain:
         assert any(status_code in route for route in response.redirect_chain), (
             f"Redirect chain {response.redirect_chain} != Target code: {status_code} on"
             f" {url}"

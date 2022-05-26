@@ -17,7 +17,7 @@ from .. import utils as u
 from .. import views as v
 from . import common
 
-
+#TODO Thread change list page needs pagination, a better to view an entire thread, and a better table
 class ThreadForm(forms.ModelForm):
     def clean(self):
         can_close, error_message = u.can_close_thread(self.cleaned_data)
@@ -56,21 +56,33 @@ class ThreadAdmin(admin.ModelAdmin):
         "thread_status",
     )
     list_display = (
-        "id",
+        "time_received",
+        "detailed_view_button",
         "job_id",
         "message_thread_initiator",
         "subject",
         "accepted_answer",
         "thread_status",
-        "thread_type",
-        "time_received",
-        "detailed_view_button",
+        "thread_type",   
     )
+    list_per_page = 15
     readonly_fields = [
         "gmail_thread_id",
+        "time_received",
+        "original_initiator",
+        "message_thread_initiator",
+        "subject",
     ]
     list_editable = ("job_id", "accepted_answer", "thread_status", "thread_type")
     change_list_template = "admin/message_thread/change_list.html"
+
+    def get_readonly_fields(self, request, obj):
+        """
+        Only a super user can edit all of the fields
+        """
+        if request.user.is_superuser:
+            return []
+        return self.readonly_fields
 
     def get_changelist_form(self, request, **kwargs):
         """
@@ -113,7 +125,7 @@ class ThreadAdmin(admin.ModelAdmin):
                 "Queryset could not be returned because user didn't meet requirements of"
                 " being staff/super user or active."
             )
-
+    @admin.display(description="View") # change column name to View
     def detailed_view_button(self, object: m.Thread):
         return format_html(
             f"<a href={reverse('user:message_thread_detailed_view', args=[object.id])} target='_blank'>View</a>",

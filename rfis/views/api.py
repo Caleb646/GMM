@@ -110,7 +110,6 @@ def gmail_get_unread_messages(request, *args, **kwargs):
     service = g_service.GmailService()
     g_parser = e_parser.GmailParser()
     read_messages = u.process_multiple_gmail_threads(service, g_parser)
-    # TODO uncomment
     service.mark_read_messages(read_messages)
     return JsonResponse(
         {

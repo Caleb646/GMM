@@ -15,6 +15,9 @@ class GmailParser(BaseParser):
         super().__init__()
         self._subject_parser = SubjectLineParser()
 
+    def __repr__(self) -> str:
+        return str(self._chosen)
+
     def parse(self, gmail_message):
         self._clear()
         if not gmail_message:
@@ -124,7 +127,7 @@ class GmailParser(BaseParser):
     @property
     def subject(self):
         assert self._is_parsed
-        return self._subject_parser.parsed_subject_line
+        return self._subject_parser.parsed_subject_line if self._subject_parser.parsed_subject_line else "(No Subject)"
 
     @property
     def fromm(self):
