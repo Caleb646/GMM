@@ -96,6 +96,7 @@ class MultiPartParser(BaseBodyParser):
 
     def _parse_attachments(self, parts):
         assert parts, f"Parts cannot be {parts}"
+        unique_attachment_ids = set()
         for p in parts:
             filename = p.get("filename")
             attachment_id = p.get("body", {}).get("attachmentId")
@@ -106,7 +107,13 @@ class MultiPartParser(BaseBodyParser):
             p_headers = p.get("headers")
             if p.get("parts"):
                 self._parse_attachments(p.get("parts"))
-            if filename != "" and attachment_id:
+            if (
+                filename != ""
+                and attachment_id
+                and attachment_id
+                not in unique_attachment_ids  # attachments can be included multiple times so only add them once
+            ):
+                unique_attachment_ids.add(attachment_id)
                 self._chosen["files_info"].append(
                     {"filename": filename, "gmail_attachment_id": attachment_id}
                 )
