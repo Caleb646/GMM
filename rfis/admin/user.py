@@ -17,6 +17,7 @@ from .. import utils as u
 from .. import views as v
 from . import common
 
+
 #TODO Thread change list page needs pagination, a better to view an entire thread, and a better table
 class ThreadForm(forms.ModelForm):
     def clean(self):
@@ -126,9 +127,9 @@ class ThreadAdmin(admin.ModelAdmin):
                 " being staff/super user or active."
             )
     @admin.display(description="View") # change column name to View
-    def detailed_view_button(self, object: m.Thread):
+    def detailed_view_button(self, thread: m.Thread):
         return format_html(
-            f"<a href={reverse('user:message_thread_detailed_view', args=[object.id])} target='_blank'>View</a>",
+            f"<a href={reverse('user:message_thread_detailed_view', args=[thread.id])} target='_blank'>View</a>",
         )
 
     def get_urls(self):

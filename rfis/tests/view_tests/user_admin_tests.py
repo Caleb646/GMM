@@ -20,31 +20,37 @@ class MessageManagerTestCase(TestCase):
 
     def test_thread_detailed(self):
         threads = m.Thread.objects.all()
-        for thread in threads:
-            url = reverse("user:message_thread_detailed_view", args=[thread.id])
 
-            # unauthenticated user should get redirected
+        for t in threads:
+            url = reverse("user:message_thread_detailed_view", args=[t.id])
             testu.redirect_auth_check(
                 url, "", 302, testu.redirect_join(testu.USER_ADMIN_LOGIN, url)
             )
-            testu.auth_check(url, "", 302)
-            testu.auth_check(url, "test1", 200)
-            testu.auth_check(url, "staff", 200)
-            response = testu.auth_check(url, "admin", 200)
-            # https://docs.djangoproject.com/en/4.0/topics/testing/tools/
-            # context is a list of contexts
-            messages = m.Message.objects.filter(message_thread_id=thread)
-            view_messages = testu.from_context(response.context, "my_messages")
-            difference = messages.difference(view_messages)
-            self.assertEqual(
-                difference.count(), 0, f"\n\ndifference: {difference.values_list()}"
+            testu.auth_check(url, "test1", 200, False)
+            testu.auth_check(url, "staff", 200, False)
+            response = testu.auth_check(url, "admin", 200, False)
+            r_messages = testu.from_context(response.context, "my_messages")
+            r_attachments = testu.from_context(response.context, "my_attachments")
+            messages = m.Message.objects.filter(message_thread_id=t)
+
+            # ensure that there are not duplicates
+            attachments = (
+                m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
+                .order_by("gmail_attachment_id")
+                .distinct("gmail_attachment_id")
+            )
+            # assert that
+            # 1. messages are in the appropriate order
+            # 2. there are no duplicate messages
+            self.assertListEqual(
+                [m.message_id for m in messages],
+                [msg.message_id for msg in r_messages],
             )
 
-            attachments = m.Attachment.objects.filter(
-                message_id__in=[m.id for m in messages]
-            )
-            view_attachments = testu.from_context(response.context, "my_attachments")
-            difference = attachments.difference(view_attachments)
-            self.assertEqual(
-                difference.count(), 0, f"\n\ndifference: {difference.values_list()}"
+            # assert that
+            # 1. attachments are in the appropriate order
+            # 2. there are no duplicate attachments
+            self.assertListEqual(
+                [atx.gmail_attachment_id for atx in attachments],
+                [a.gmail_attachment_id for a in r_attachments],
             )

@@ -6,6 +6,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if not os.getenv("DEBUG"):  # if DEBUG environment variable is set dont load the .env file
     from dotenv import load_dotenv
+
     load_dotenv(os.path.join(BASE_DIR, ".env.dev"))
 
 SECRET_KEY = os.environ["SECRET_KEY"]
@@ -160,3 +161,6 @@ SESSION_COOKIE_SECURE = USE_SSL
 CSRF_COOKIE_SECURE = USE_SSL
 # SECURE_HSTS_INCLUDE_SUBDOMAINS  = not DEBUG
 # SECURE_HSTS_SECONDS             = 1000000
+
+# custom test runner that disables logging during tests
+TEST_RUNNER = "rfis.tests.test_runner.NoLoggingTestRunner"

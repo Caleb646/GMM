@@ -76,7 +76,11 @@ class ThreadMessagesView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
     def test_func(self):
-        return True
+        return (
+            self.request.user.is_staff
+            or self.request.user.is_superuser
+            or self.request.user.is_active
+        )
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
