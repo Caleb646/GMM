@@ -44,8 +44,8 @@ class ThreadDetailedView(LoginRequiredMixin, View):
         # using distinct here removes the duplicates from those older threads.
         attachments = (
             m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
-            .order_by("gmail_attachment_id")
-            .distinct("gmail_attachment_id")
+            .order_by("filename")
+            .distinct("filename", "gmail_attachment_id")
         )
         return render(
             request,
