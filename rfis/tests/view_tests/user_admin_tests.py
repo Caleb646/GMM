@@ -33,11 +33,13 @@ class MessageManagerTestCase(TestCase):
             r_attachments = testu.from_context(response.context, "my_attachments")
             messages = m.Message.objects.filter(message_thread_id=t)
 
-            # ensure that there are not duplicates
+            # attachments filename and message id must be unique
+            # example: test.txt 1234, test.txt 1456 -> both are kept
+            # example: test.txt 1234, test.txt 1234 -> one is kept
             attachments = (
                 m.Attachment.objects.filter(message_id__in=[m.id for m in messages])
-                .order_by("gmail_attachment_id")
-                .distinct("gmail_attachment_id")
+                .order_by("filename")
+                .distinct("filename", "message_id")
             )
             # assert that
             # 1. messages are in the appropriate order
@@ -51,6 +53,6 @@ class MessageManagerTestCase(TestCase):
             # 1. attachments are in the appropriate order
             # 2. there are no duplicate attachments
             self.assertListEqual(
-                [atx.gmail_attachment_id for atx in attachments],
-                [a.gmail_attachment_id for a in r_attachments],
+                [atx.filename for atx in attachments],
+                [a.filename for a in r_attachments],
             )

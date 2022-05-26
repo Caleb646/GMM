@@ -119,8 +119,11 @@ class ThreadTypeAltName(models.Model):
 class Thread(models.Model):
     class Meta:
         verbose_name = "Message Thread"
+
     gmail_thread_id = models.CharField(max_length=400, unique=True)
-    job_id = models.ForeignKey(Job, on_delete=models.SET(Job.get_job_sentinel_id), verbose_name="Job")
+    job_id = models.ForeignKey(
+        Job, on_delete=models.SET(Job.get_job_sentinel_id), verbose_name="Job"
+    )
 
     subject = models.CharField(max_length=500)
 
@@ -128,7 +131,7 @@ class Thread(models.Model):
         ThreadType,
         default=ThreadType.get_message_type_sentinel_id,
         on_delete=models.SET(ThreadType.get_message_type_sentinel_id),
-        verbose_name="Type"
+        verbose_name="Type",
     )
 
     time_received = models.DateTimeField()
@@ -142,7 +145,7 @@ class Thread(models.Model):
         max_length=25,
         choices=ThreadStatus.choices,
         default=ThreadStatus.OPEN,
-        verbose_name="Status"
+        verbose_name="Status",
     )
 
     # if the person who started the thread is a Thomas Builders employee we can send them notifications
@@ -228,7 +231,7 @@ class Attachment(models.Model):
     """
 
     class Meta:
-        ordering = ["time_received"]
+        ordering = ["-time_received"]
 
     def save(self, *args, **kwargs):
         if not self.time_received:
