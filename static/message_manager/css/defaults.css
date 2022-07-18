@@ -14,3 +14,33 @@
     background: rgb(55, 0, 255);
     color: rgb(250, 0, 0);
   }
+
+/* #changelist-form:hover ~ #changelist-filter {
+    display: none;
+    background-color: red;  
+    color: red;  
+  }
+
+/* #changelist-filter:hover {
+    display: none;
+    background-color: red;  
+    color: red;  
+  } */
+
+/* tr:hover {
+    z-index: 25;
+    color: red;  
+  } */
+
+ /* table { 
+  max-height: 400px;
+  overflow-y: scroll;
+}  */
+
+
+
+/* td { 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    word-wrap: break-word;
+} */

@@ -1,5 +1,3 @@
-
-
 function api_request(url, method = "GET") {
     fetch(url, {
         method: method

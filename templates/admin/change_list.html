@@ -2,6 +2,7 @@
 {% load static %}
 {% load tz %}
 {% comment %} Overrides admin change_list.html to load additional javascript  {% endcomment %}
+
 {% block content %}
     {% timezone DEFAULT_TIMEZONE %}
         {{ block.super }}
