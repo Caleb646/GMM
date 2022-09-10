@@ -1,0 +1,29 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_list %}
+{% load tz %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'message_manager/css/message_list.css' %}" />
+{% endblock %}
+
+{% block object-tools-items %}
+    <li>  
+           {% comment %} Don't append DOMAIN_URL to the url below {% endcomment %}
+        <a href="#" onclick="api_request('{% url 'gmail_get_unread_messages' %}');" class="">Refresh</a>
+    </li>
+    <li>
+        {% comment %} Don't append DOMAIN_URL to the url below {% endcomment %}
+        <a href={% url 'authorize_gmail_credentials' %} class="">Reauthorize Gmail Credentials</a>
+    </li>
+    {{block.super}} 
+    
+{% endblock %}
+
+{% block content %}
+    {% timezone DEFAULT_TIMEZONE %}
+        {{block.super}}
+    {% endtimezone %}
+    <script src="{% static 'message_manager/js/message_list_utils.js' %}"></script>  
+{% endblock %}

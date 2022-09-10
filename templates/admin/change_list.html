@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+{% load tz %}
+{% comment %} Overrides admin change_list.html to load additional javascript  {% endcomment %}
+
+{% block content %}
+    {% timezone DEFAULT_TIMEZONE %}
+        {{ block.super }}
+    {% endtimezone %}
+    <script src="{% static 'message_manager/js/utils.js' %}"></script>
+{% endblock %}
