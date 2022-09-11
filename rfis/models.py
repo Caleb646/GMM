@@ -103,7 +103,9 @@ class ThreadType(models.Model):
 
     @staticmethod
     def get_message_type_sentinel_id():  # returns the Unknown Message Type
-        return ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE)
+        o, _ = ThreadType.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TYPE)
+        # NOTE django doesn't want the model object just the id
+        return o.id
 
 
 class ThreadTypeAltName(models.Model):
@@ -114,6 +116,32 @@ class ThreadTypeAltName(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ThreadGroup(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def get_thread_group_sentinel_id():  # returns the Unknown Thread Group
+        o, _ = ThreadGroup.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_GROUP)
+        # NOTE django doesn't want the model object just the id
+        return o.id
+
+
+class ThreadTopic(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def get_thread_topic_sentinel_id():  # returns the Unknown Thread Topic
+        o, _ = ThreadTopic.objects.get_or_create(name=c.FIELD_VALUE_UNKNOWN_THREAD_TOPIC)
+        # NOTE django doesn't want the model object just the id
+        return o.id
 
 
 class Thread(models.Model):
@@ -127,11 +155,28 @@ class Thread(models.Model):
 
     subject = models.CharField(max_length=500)
 
+    # examples: rfi, submittal
     thread_type = models.ForeignKey(
         ThreadType,
         default=ThreadType.get_message_type_sentinel_id,
         on_delete=models.SET(ThreadType.get_message_type_sentinel_id),
         verbose_name="Type",
+    )
+
+    # examples: owner, subcontractor
+    thread_group = models.ForeignKey(
+        ThreadGroup,
+        default=ThreadGroup.get_thread_group_sentinel_id,
+        on_delete=models.SET(ThreadGroup.get_thread_group_sentinel_id),
+        verbose_name="Group"
+    )
+    
+    # examples: elevator, drywall, lighting
+    thread_topic = models.ForeignKey(
+        ThreadTopic,
+        default=ThreadTopic.get_thread_topic_sentinel_id,
+        on_delete=models.SET(ThreadTopic.get_thread_topic_sentinel_id),
+        verbose_name="Topic"
     )
 
     time_received = models.DateTimeField()

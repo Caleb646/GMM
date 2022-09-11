@@ -1,3 +1,5 @@
+activate virtual env on bash terminal -> source absolute-path/activate GmailMessageManager
+
 wipe heroku database -> heroku pg:reset DATABASE_URL --confirm app_name
 deploy app to staging enviroment -> git push heroku-staging branch_name
 run test suite -> bash scripts/run_tests.sh # contains env variable that will determine if the aws s3 bucket is used for storage or the default storage during the test

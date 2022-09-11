@@ -6,9 +6,14 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if not os.getenv("DEBUG"):  # if DEBUG environment variable is set dont load the .env file
     from dotenv import load_dotenv
+    path = os.path.join(BASE_DIR, ".env.dev")
+    assert os.path.exists(path), f"\nPath {path} doesn't exist\n"
+    loaded = load_dotenv(path, verbose=True)
+    assert loaded, "Environment could not be loaded successfully."
+    print(f"\n\nEnvironment loaded successfully: {loaded}\n\n")
 
-    load_dotenv(os.path.join(BASE_DIR, ".env.dev"))
-
+# for key in os.environ.keys():
+#     print(key)
 SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = bool(int(os.getenv("DEBUG", default="0")))
 ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")

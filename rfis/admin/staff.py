@@ -47,6 +47,16 @@ class ThreadTypeAdmin(admin.ModelAdmin):
     inlines = [ThreadTypeAltNameInline]
 
 
+class ThreadGroupAdmin(admin.ModelAdmin):
+    search_fields = ["name"]
+    list_display = ("name",)
+
+
+class ThreadTopicAdmin(admin.ModelAdmin):
+    search_fields = ["name"]
+    list_display = ("name",)
+
+
 class MessageAdmin(admin.ModelAdmin):
     list_display = (
         "message_id",
@@ -79,6 +89,8 @@ admin.site.register(m.MessageLog, DashboardAdmin)
 admin.site.register(m.Job, JobAdmin)
 admin.site.register(m.ThreadType, ThreadTypeAdmin)
 # admin.site.register(m.ThreadTypeAltName, MessageThreadTypeAlternativeNameAdmin)
+admin.site.register(m.ThreadGroup, ThreadGroupAdmin)
+admin.site.register(m.ThreadTopic, ThreadTopicAdmin)
 admin.site.register(m.Thread)
 admin.site.register(m.Message, MessageAdmin)
 admin.site.register(m.Attachment, AttachmentAdmin)
