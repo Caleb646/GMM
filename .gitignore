@@ -6,6 +6,7 @@ token.json
 .env*
 **__pycache__**
 **media**
+**static_root**
 
 htmlcov/
 .coverage
