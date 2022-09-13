@@ -8,6 +8,8 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.utils import timezone
+from django.contrib import admin
+from django import forms
 
 from . import constants as c
 from . import managers as mg
@@ -150,7 +152,8 @@ class Thread(models.Model):
 
     gmail_thread_id = models.CharField(max_length=400, unique=True)
     job_id = models.ForeignKey(
-        Job, on_delete=models.SET(Job.get_job_sentinel_id), verbose_name="Job"
+        Job, on_delete=models.SET(Job.get_job_sentinel_id), 
+        verbose_name="Job, Group, Topic, & Type" # because the group, topic, and type fields are grouped with job in the change list view
     )
 
     subject = models.CharField(max_length=500)

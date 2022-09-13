@@ -1,4 +1,4 @@
-activate virtual env on bash terminal -> source absolute-path/activate GmailMessageManager
+activate conda virtual env on bash terminal -> source C:/Users/user/miniconda3/Scripts/activate GmailMessageManager
 
 wipe heroku database -> heroku pg:reset DATABASE_URL --confirm app_name
 deploy app to staging enviroment -> git push heroku-staging branch_name

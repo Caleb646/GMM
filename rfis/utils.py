@@ -39,6 +39,8 @@ def can_close_thread(cleaned_form_data: dict):
     accepted_answer = cleaned_form_data.get("accepted_answer")
     thread_type = cleaned_form_data.get("thread_type")
     thread_status = cleaned_form_data.get("thread_status")
+    thread_group = cleaned_form_data.get("thread_group")
+    thread_topic = cleaned_form_data.get("thread_topic")
     # print(self.cleaned_data)
     # if a thread is going to be closed then the above values have to be set correctly
     if thread_status == c.FIELD_VALUE_CLOSED_THREAD_STATUS:
@@ -51,7 +53,7 @@ def can_close_thread(cleaned_form_data: dict):
         if thread_type.name == c.FIELD_VALUE_UNKNOWN_THREAD_TYPE:
             return (
                 False,
-                f"The thread type cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when"
+                f"The message type cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TYPE} when"
                 " closing a message.",
             )
 
@@ -60,6 +62,16 @@ def can_close_thread(cleaned_form_data: dict):
                 False,
                 "The accepted answer has to be filled out when closing a message. If an"
                 " accepted answer is not applicable type N/A in the field.",
+            )
+        if thread_group.name == c.FIELD_VALUE_UNKNOWN_THREAD_GROUP:
+            return (
+                False, 
+                f"The group cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_GROUP} when closing a message."
+            )
+        if thread_topic.name == c.FIELD_VALUE_UNKNOWN_THREAD_TOPIC:
+            return (
+                False, 
+                f"The topic cannot be {c.FIELD_VALUE_UNKNOWN_THREAD_TOPIC} when closing a message."
             )
     return True, ""
 

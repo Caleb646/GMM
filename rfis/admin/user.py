@@ -20,6 +20,10 @@ from . import common
 
 #TODO Thread change list page needs pagination, a better to view an entire thread, and a better table
 class ThreadForm(forms.ModelForm):
+
+    def as_table(self):
+        return super().as_table()
+
     def clean(self):
         can_close, error_message = u.can_close_thread(self.cleaned_data)
         if not can_close:
@@ -53,6 +57,8 @@ class ThreadAdmin(admin.ModelAdmin):
         ThreadJobFilter,
         UserThreadFilter,
         "time_received",
+        "thread_group",
+        "thread_topic",
         "thread_type",
         "thread_status",
     )
@@ -60,11 +66,13 @@ class ThreadAdmin(admin.ModelAdmin):
         "time_received",
         "detailed_view_button",
         "job_id",
-        "message_thread_initiator",
-        "subject",
+        #"test_widget",
+        "thread_group",
+        "thread_topic",
+        "thread_type", 
+        "combined_sender_subject",
         "accepted_answer",
-        "thread_status",
-        "thread_type",   
+        "thread_status",  
     )
     list_per_page = 15
     readonly_fields = [
@@ -74,7 +82,7 @@ class ThreadAdmin(admin.ModelAdmin):
         "message_thread_initiator",
         "subject",
     ]
-    list_editable = ("job_id", "accepted_answer", "thread_status", "thread_type")
+    list_editable = ("job_id",  "thread_group", "thread_topic", "accepted_answer", "thread_status", "thread_type")
     change_list_template = "admin/message_thread/change_list.html"
 
     def get_readonly_fields(self, request, obj):
@@ -85,10 +93,15 @@ class ThreadAdmin(admin.ModelAdmin):
             return []
         return self.readonly_fields
 
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
     def get_changelist_form(self, request, **kwargs):
         """
         Return a ThreadForm class for use in the Formset on the changelist page.
         """
+        # NOTE widgets need to be placed here and not in the ThreadForm class so that get_readonly_fields isn't
+        # overridden by them.
         defaults = {
             "formfield_callback": partial(self.formfield_for_dbfield, request=request),
             "fields": forms.ALL_FIELDS,
@@ -97,8 +110,8 @@ class ThreadAdmin(admin.ModelAdmin):
                     attrs={"required": False}
                 ),  # adds a hidden field for js ids
                 "accepted_answer": forms.Textarea(attrs={"rows": 2, "cols": 35}),
-                "subject": forms.Textarea(
-                    attrs={"rows": 2, "cols": 35, "readonly": "readonly"}
+                "combined_sender_subject": forms.Textarea(
+                     attrs={"label": "Sender & Subject", "rows": 3, "cols": 35, "readonly": "readonly"}
                 ),
                 "time_received": forms.DateTimeInput(
                     attrs={"readonly": "readonly"}, format="%m/%d/%y"
@@ -126,6 +139,11 @@ class ThreadAdmin(admin.ModelAdmin):
                 "Queryset could not be returned because user didn't meet requirements of"
                 " being staff/super user or active."
             )
+
+    @admin.display(description="Sender & Subject")
+    def combined_sender_subject(self, thread: m.Thread):
+        return f"Sender: {thread.message_thread_initiator.email} \n\nSubject: {thread.subject}" 
+
     @admin.display(description="View") # change column name to View
     def detailed_view_button(self, thread: m.Thread):
         return format_html(
@@ -190,3 +208,5 @@ user_admin_site.register(m.Thread, ThreadAdmin)
 user_admin_site.register(m.ThreadType, ThreadTypeAdmin)
 user_admin_site.register(m.Job, JobAdmin)
 user_admin_site.register(m.MyUser, common.MyUserAdmin)
+user_admin_site.register(m.ThreadGroup)
+user_admin_site.register(m.ThreadTopic)

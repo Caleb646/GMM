@@ -10,7 +10,7 @@ if not os.getenv("DEBUG"):  # if DEBUG environment variable is set dont load the
     assert os.path.exists(path), f"\nPath {path} doesn't exist\n"
     loaded = load_dotenv(path, verbose=True)
     assert loaded, "Environment could not be loaded successfully."
-    print(f"\n\nEnvironment loaded successfully: {loaded}\n\n")
+    print(f"\nEnvironment loaded successfully: {loaded}\n")
 
 # for key in os.environ.keys():
 #     print(key)
