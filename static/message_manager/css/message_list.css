@@ -1,6 +1,11 @@
+/* 
+ NOTE puts the thread change list in a small scrollable window. This is not
+      needed anymore because the select fields are now stacked so a row no longer goes 
+      off the screen.
+      
 .results > table {
     display: block;
     width: 100%;
     height: 400px;
     overflow-y: scroll;
-  }
+  } */

@@ -58,18 +58,26 @@ class UtilsTestCase(TestCase):
         )
         valid_thread_type = m.ThreadType.objects.get(name="RFI")
 
+        unknown_group = m.ThreadGroup.objects.get(name=c.FIELD_VALUE_UNKNOWN_THREAD_GROUP)
+        valid_group, _ = m.ThreadGroup.objects.get_or_create(name='Test Group')
+
+        unknown_topic = m.ThreadTopic.objects.get(name=c.FIELD_VALUE_UNKNOWN_THREAD_TOPIC)
+        valid_topic, _  = m.ThreadTopic.objects.get_or_create(name='Test Topic ')
+
         empty_accepted_answer = ""
         valid_answer = "test answer"
 
         thread_status_close = c.FIELD_VALUE_CLOSED_THREAD_STATUS
         thread_status_open = c.FIELD_VALUE_OPEN_THREAD_STATUS
 
-        def create_clean_data(job, ttype, answer, status):
+        def create_clean_data(job, ttype, answer, status, group, topic):
             return {
                 "job_id": job,
                 "accepted_answer": answer,
                 "thread_type": ttype,
                 "thread_status": status,
+                "thread_group": group,
+                "thread_topic": topic
             }
 
         should_fail = [
@@ -78,43 +86,49 @@ class UtilsTestCase(TestCase):
                 unknown_thread_type,
                 empty_accepted_answer,
                 thread_status_close,
+                unknown_group,
+                valid_topic,
             ],
-            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_close],
-            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_close],
-            [unknown_job, unknown_thread_type, valid_answer, thread_status_close],
-            [unknown_job, valid_thread_type, valid_answer, thread_status_close],
-            [valid_job, valid_thread_type, empty_accepted_answer, thread_status_close],
+            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_close, valid_group, unknown_topic],
+            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_close, valid_group, unknown_topic],
+            [unknown_job, unknown_thread_type, valid_answer, thread_status_close, valid_group, unknown_topic],
+            [unknown_job, valid_thread_type, valid_answer, thread_status_close, valid_group, unknown_topic],
+            [valid_job, valid_thread_type, empty_accepted_answer, thread_status_close, unknown_group, unknown_topic],
         ]
 
         should_pass = [
-            [unknown_job, unknown_thread_type, empty_accepted_answer, thread_status_open],
-            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_open],
-            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_open],
-            [unknown_job, unknown_thread_type, valid_answer, thread_status_open],
-            [unknown_job, valid_thread_type, valid_answer, thread_status_open],
-            [valid_job, valid_thread_type, valid_answer, thread_status_close],
+            [unknown_job, unknown_thread_type, empty_accepted_answer, thread_status_open, valid_group, unknown_topic],
+            [valid_job, unknown_thread_type, empty_accepted_answer, thread_status_open, unknown_group, valid_topic],
+            [unknown_job, valid_thread_type, empty_accepted_answer, thread_status_open, valid_group, valid_topic],
+            [unknown_job, unknown_thread_type, valid_answer, thread_status_open, unknown_group, unknown_topic],
+            [unknown_job, valid_thread_type, valid_answer, thread_status_open, valid_group, valid_topic],
+            [valid_job, valid_thread_type, valid_answer, thread_status_close, valid_group, valid_topic],
         ]
 
         for data in should_fail:
-            j, tt, ans, st = data
+            j, tt, ans, st, group, topic = data
             can_close, error_msg = u.can_close_thread(
                 create_clean_data(
                     j,
                     tt,
                     ans,
                     st,
+                    group, 
+                    topic
                 )
             )
             self.assertEqual(can_close, False)
 
         for data in should_pass:
-            j, tt, ans, st = data
+            j, tt, ans, st, group, topic = data
             can_close, error_msg = u.can_close_thread(
                 create_clean_data(
                     j,
                     tt,
                     ans,
                     st,
+                    group,
+                    topic
                 )
             )
             self.assertEqual(can_close, True)
