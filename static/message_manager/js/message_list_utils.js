@@ -26,6 +26,22 @@ function removeElements(elementsToRemove) {
     }
 }
 
+function findRowIndexByColumnName(tableID, columnName) {
+    let table = document.getElementById(tableID);
+    let regex = new RegExp(`.*${columnName}.*`, 'is');
+    for(let row of table.rows) {
+        for(let i = 0; i < row.cells.length; i++) {
+            let cell = row.cells[i];
+            if(regex.test(cell.className)) {
+                return i;
+            }
+        }
+    }
+    // NOTE: columnName MUST always be found.
+    console.assert(false, `Column Name: ${columnName} was not found in table with ID: ${tableID}`);
+    return Infinity;
+}
+
 function removeTableColumns(tableID, columnCellNumsToRemove) {
     /*
     * Summary. Takes in a table id and list of cells to remove from that tables rows. It then removes them.
@@ -33,6 +49,8 @@ function removeTableColumns(tableID, columnCellNumsToRemove) {
     * @param {list} columnCellNumsToRemove A list of cell indices to be removed from each row. Should be ordered [largest...smallest]  
     */
     let table = document.getElementById(tableID);
+    columnCellNumsToRemove.sort().reverse(); // should be in descending order
+    console.assert(columnCellNumsToRemove[-1] != -1, `A Column index in columnCellNumsToRemove cannot be -1: ${columnCellNumsToRemove}`);
     let maxIndex = Math.max(...columnCellNumsToRemove);
     for(let row of table.rows) {
         if(maxIndex < row.cells.length) {
@@ -43,8 +61,6 @@ function removeTableColumns(tableID, columnCellNumsToRemove) {
         else {
             console.warn(`Max index of ${maxIndex} was larger than cells array ${row.cells.length}`);
         }
-
-        
     }
 }
 
@@ -93,6 +109,9 @@ window.onload = (e) => {
     let columnsToAddToJobID = ["thread_group", "thread_topic", "thread_type"];//, "thread_status"];
     // NOTE need to be in reverse order so when the cell are deleted the next index will still be valid.
     // NOTE if the order in the Django Admin changes these indices will have to be adjusted.
-    let columnCellNumsToDelete = [6, 5, 4];
+    let threadGroupIndex = findRowIndexByColumnName("result_list", "thread_group");
+    let threadTopicIndex = findRowIndexByColumnName("result_list", "thread_topic");
+    let threadTypeIndex = findRowIndexByColumnName("result_list", "thread_type");
+    let columnCellNumsToDelete = [threadGroupIndex, threadTopicIndex, threadTypeIndex];
     stackMessageListColumns(jobElementID, columnsToAddToJobID, columnCellNumsToDelete);
 }
