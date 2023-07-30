@@ -1,5 +1,5 @@
 # GMM: Email Tracking System using Python and Django
-GMM (short for "Get My Mails") is an open-source email tracking system built with Python and Django. 
+GMM (short for "Get My Mail") is an open-source email tracking system built with Python and Django. 
 The primary goal of GMM is to simplify email tracking by automating the process of logging emails into the system. 
 By simply cc'ing the designated system email address, GMM will automatically track the email and any subsequent 
 emails in the same conversation thread.
